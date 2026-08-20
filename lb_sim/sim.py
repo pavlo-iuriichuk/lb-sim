@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from .client_behavior import ClientBehavior, create_client_behavior
 from .domain import Client, Instance, LoadBalancer
 from .experimental import LeastLatencyPolicy
+from .metrics import load_metrics_source
 from .policies import (
     LeastConnectionsPolicy,
     PickTwoRandomThenLeastLoadedPolicy,
@@ -44,6 +45,7 @@ class SimulationConfig:
     client_workload_stddev: float = 0.5
     failure_rate: float = 0.0
     unhealthy_instances: str = ""
+    metrics_source: str | None = None
     seed: int = 0
     output_dir: str = "output"
 
@@ -103,6 +105,7 @@ class Simulator:
         self.rng = random.Random(config.seed)
         self.behavior = self._create_behavior(config.client_behavior or config.client_behaviour or "constant")
         self.policy = self._create_policy(config.policy_name)
+        self.metrics = load_metrics_source(config.metrics_source) if config.metrics_source else []
 
     def _create_policy(self, policy_name: str) -> Policy:
         name = policy_name.strip()
@@ -178,25 +181,60 @@ class Simulator:
         lb = LoadBalancer(self.policy, self.build_instances())
         snapshots: List[Dict[str, Any]] = []
 
-        for tick in range(self.config.ticks):
-            arrivals = self.behavior.generate_count(tick, self.rng)
-            for index in range(arrivals):
-                workload = max(0.1, self.rng.gauss(self.config.client_workload_mean, self.config.client_workload_stddev))
-                client = Client(
-                    client_id=f"client-{tick}-{index}",
-                    arrival_tick=tick,
-                    workload=workload,
-                    duration_ticks=max(1, int(self.rng.randint(1, 4))),
-                )
-                lb.dispatch(client)
+        if self.metrics:
+            for tick_record in self.metrics:
+                tick = int(tick_record.get("tick", len(snapshots)))
+                arrivals = int(tick_record.get("arrivals", 0))
+                instance_state = tick_record.get("instances", [])
 
-            state = {
-                "tick": tick,
-                "arrivals": arrivals,
-                "instances": [instance.snapshot() for instance in lb.instances],
-                "selection_history": list(lb.selection_history),
-            }
-            snapshots.append(state)
+                for item in instance_state:
+                    name = item.get("name")
+                    instance = next((candidate for candidate in lb.instances if candidate.name == name), None)
+                    if instance is None:
+                        continue
+                    instance.current_connections = int(item.get("current_connections", instance.current_connections))
+                    instance.estimated_load = float(item.get("estimated_load", instance.estimated_load))
+                    instance.is_healthy = bool(item.get("is_healthy", instance.is_healthy))
+                    instance.cpu_usage = float(item.get("cpu_usage", instance.cpu_usage))
+                    instance.latency_ms = float(item.get("latency_ms", instance.latency_ms))
+
+                for _ in range(arrivals):
+                    workload = max(0.1, self.rng.gauss(self.config.client_workload_mean, self.config.client_workload_stddev))
+                    client = Client(
+                        client_id=f"replay-client-{tick}-{_}",
+                        arrival_tick=tick,
+                        workload=workload,
+                        duration_ticks=max(1, int(self.rng.randint(1, 4))),
+                    )
+                    lb.dispatch(client)
+
+                state = {
+                    "tick": tick,
+                    "arrivals": arrivals,
+                    "instances": [instance.snapshot() for instance in lb.instances],
+                    "selection_history": list(lb.selection_history),
+                }
+                snapshots.append(state)
+        else:
+            for tick in range(self.config.ticks):
+                arrivals = self.behavior.generate_count(tick, self.rng)
+                for index in range(arrivals):
+                    workload = max(0.1, self.rng.gauss(self.config.client_workload_mean, self.config.client_workload_stddev))
+                    client = Client(
+                        client_id=f"client-{tick}-{index}",
+                        arrival_tick=tick,
+                        workload=workload,
+                        duration_ticks=max(1, int(self.rng.randint(1, 4))),
+                    )
+                    lb.dispatch(client)
+
+                state = {
+                    "tick": tick,
+                    "arrivals": arrivals,
+                    "instances": [instance.snapshot() for instance in lb.instances],
+                    "selection_history": list(lb.selection_history),
+                }
+                snapshots.append(state)
 
         summary = self._summarize(snapshots)
         result = SimulationResult(config=self.config, snapshots=snapshots, summary=summary)

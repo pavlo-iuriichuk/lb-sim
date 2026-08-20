@@ -95,3 +95,58 @@ def test_linear_and_exponential_behaviors_scale_with_tick():
 
     assert linear.generate_count(2, __import__("random").Random(1)) == 8
     assert exponential.generate_count(3, __import__("random").Random(1)) == 16
+
+
+def test_load_metrics_source_from_json_file(tmp_path):
+    import json
+
+    from lb_sim.metrics import load_metrics_source
+
+    metrics_path = tmp_path / "metrics.json"
+    metrics_path.write_text(
+        json.dumps(
+            [
+                {
+                    "tick": 0,
+                    "arrivals": 3,
+                    "instances": [
+                        {"name": "machine-0", "current_connections": 4, "estimated_load": 8.0},
+                        {"name": "machine-1", "current_connections": 1, "estimated_load": 4.5},
+                    ],
+                }
+            ]
+        )
+    )
+
+    metrics = load_metrics_source(str(metrics_path))
+
+    assert metrics[0]["tick"] == 0
+    assert metrics[0]["instances"][0]["name"] == "machine-0"
+
+
+def test_simulator_can_replay_metrics_file(tmp_path):
+    import json
+
+    from lb_sim.sim import SimulationConfig, Simulator
+
+    metrics_path = tmp_path / "replay.json"
+    metrics_path.write_text(
+        json.dumps(
+            [
+                {
+                    "tick": 0,
+                    "arrivals": 2,
+                    "instances": [
+                        {"name": "machine-0", "current_connections": 4, "estimated_load": 8.0},
+                        {"name": "machine-1", "current_connections": 1, "estimated_load": 4.5},
+                    ],
+                }
+            ]
+        )
+    )
+
+    config = SimulationConfig(machines=2, ticks=1, policy_name="round_robin", metrics_source=str(metrics_path), seed=1)
+    result = Simulator(config).run()
+
+    assert result.summary["machines"] == 2
+    assert len(result.snapshots) == 1

@@ -22,6 +22,7 @@ def cli() -> None:
 @click.option("--seed", default=0, type=int, help="Random seed for deterministic simulation.")
 @click.option("--failure-rate", default=0.0, type=float, help="per-instance probability of failure before each tick.")
 @click.option("--unhealthy-instances", default="", help="Comma-separated machine names to mark unhealthy from the start, e.g. machine-1,machine-2.")
+@click.option("--metrics-source", default=None, type=click.Path(exists=False, dir_okay=False, path_type=Path), help="Path to metrics JSON/CSV replay file to simulate or replay an incident from captured data.")
 @click.option("--output-dir", default="output", show_default=True, type=click.Path(file_okay=False, path_type=Path), help="Directory to store simulation output.")
 @click.option("--client-workload-mean", default=1.0, type=float, help="Mean client workload.")
 @click.option("--client-workload-stddev", default=0.5, type=float, help="Standard deviation of client workload.")
@@ -34,6 +35,7 @@ def run(
     seed: int,
     failure_rate: float,
     unhealthy_instances: str,
+    metrics_source: Path | None,
     output_dir: Path,
     client_workload_mean: float,
     client_workload_stddev: float,
@@ -47,6 +49,7 @@ def run(
         seed=seed,
         failure_rate=failure_rate,
         unhealthy_instances=unhealthy_instances,
+        metrics_source=str(metrics_source) if metrics_source else None,
         output_dir=str(output_dir),
         client_workload_mean=client_workload_mean,
         client_workload_stddev=client_workload_stddev,

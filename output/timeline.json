@@ -6,254 +6,29 @@
       {
         "name": "machine-0",
         "capacity": 10.0,
-        "current_connections": 1,
-        "estimated_load": 1.4744701861078902,
-        "cpu_usage": 0.24744701861078902,
+        "current_connections": 5,
+        "estimated_load": 9.644092376577731,
+        "cpu_usage": 1.0,
         "memory_usage": 0.0,
         "latency_ms": 0.0,
         "is_healthy": true,
         "failure_rate": 0.0,
-        "utilization": 0.14744701861078902
-      },
-      {
-        "name": "machine-1",
-        "capacity": 11.0,
-        "current_connections": 1,
-        "estimated_load": 0.8387684785165364,
-        "cpu_usage": 0.16716077077423058,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.07625167986513967
-      },
-      {
-        "name": "machine-2",
-        "capacity": 12.0,
-        "current_connections": 0,
-        "estimated_load": 0.0,
-        "cpu_usage": 0.0,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.0
-      }
-    ],
-    "selection_history": [
-      "machine-0",
-      "machine-1"
-    ]
-  },
-  {
-    "tick": 1,
-    "arrivals": 4,
-    "instances": [
-      {
-        "name": "machine-0",
-        "capacity": 10.0,
-        "current_connections": 2,
-        "estimated_load": 2.8430806632246592,
-        "cpu_usage": 0.4843080663224659,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.2843080663224659
+        "utilization": 0.9644092376577731
       },
       {
         "name": "machine-1",
         "capacity": 11.0,
         "current_connections": 2,
-        "estimated_load": 2.285092800844849,
-        "cpu_usage": 0.3895538909858953,
+        "estimated_load": 6.224722804349885,
+        "cpu_usage": 0.7477020731227169,
         "memory_usage": 0.0,
         "latency_ms": 0.0,
         "is_healthy": true,
         "failure_rate": 0.0,
-        "utilization": 0.20773570916771353
-      },
-      {
-        "name": "machine-2",
-        "capacity": 12.0,
-        "current_connections": 2,
-        "estimated_load": 2.8163766394101506,
-        "cpu_usage": 0.4013647199508459,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.23469805328417923
+        "utilization": 0.565883891304535
       }
     ],
     "selection_history": [
-      "machine-0",
-      "machine-1",
-      "machine-2",
-      "machine-0",
-      "machine-1",
-      "machine-2"
-    ]
-  },
-  {
-    "tick": 2,
-    "arrivals": 4,
-    "instances": [
-      {
-        "name": "machine-0",
-        "capacity": 10.0,
-        "current_connections": 4,
-        "estimated_load": 3.5261986000301206,
-        "cpu_usage": 0.7526198600030121,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.35261986000301204
-      },
-      {
-        "name": "machine-1",
-        "capacity": 11.0,
-        "current_connections": 3,
-        "estimated_load": 3.7127182852272176,
-        "cpu_usage": 0.6102471168388379,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.3375198441115652
-      },
-      {
-        "name": "machine-2",
-        "capacity": 12.0,
-        "current_connections": 3,
-        "estimated_load": 3.365578214673036,
-        "cpu_usage": 0.530464851222753,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.280464851222753
-      }
-    ],
-    "selection_history": [
-      "machine-0",
-      "machine-1",
-      "machine-2",
-      "machine-0",
-      "machine-1",
-      "machine-2",
-      "machine-0",
-      "machine-1",
-      "machine-2",
-      "machine-0"
-    ]
-  },
-  {
-    "tick": 3,
-    "arrivals": 0,
-    "instances": [
-      {
-        "name": "machine-0",
-        "capacity": 10.0,
-        "current_connections": 4,
-        "estimated_load": 3.5261986000301206,
-        "cpu_usage": 0.7526198600030121,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.35261986000301204
-      },
-      {
-        "name": "machine-1",
-        "capacity": 11.0,
-        "current_connections": 3,
-        "estimated_load": 3.7127182852272176,
-        "cpu_usage": 0.6102471168388379,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.3375198441115652
-      },
-      {
-        "name": "machine-2",
-        "capacity": 12.0,
-        "current_connections": 3,
-        "estimated_load": 3.365578214673036,
-        "cpu_usage": 0.530464851222753,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.280464851222753
-      }
-    ],
-    "selection_history": [
-      "machine-0",
-      "machine-1",
-      "machine-2",
-      "machine-0",
-      "machine-1",
-      "machine-2",
-      "machine-0",
-      "machine-1",
-      "machine-2",
-      "machine-0"
-    ]
-  },
-  {
-    "tick": 4,
-    "arrivals": 1,
-    "instances": [
-      {
-        "name": "machine-0",
-        "capacity": 10.0,
-        "current_connections": 4,
-        "estimated_load": 3.5261986000301206,
-        "cpu_usage": 0.7526198600030121,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.35261986000301204
-      },
-      {
-        "name": "machine-1",
-        "capacity": 11.0,
-        "current_connections": 4,
-        "estimated_load": 5.659413663822072,
-        "cpu_usage": 0.8781285148929157,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.514492151256552
-      },
-      {
-        "name": "machine-2",
-        "capacity": 12.0,
-        "current_connections": 3,
-        "estimated_load": 3.365578214673036,
-        "cpu_usage": 0.530464851222753,
-        "memory_usage": 0.0,
-        "latency_ms": 0.0,
-        "is_healthy": true,
-        "failure_rate": 0.0,
-        "utilization": 0.280464851222753
-      }
-    ],
-    "selection_history": [
-      "machine-0",
-      "machine-1",
-      "machine-2",
-      "machine-0",
-      "machine-1",
-      "machine-2",
-      "machine-0",
-      "machine-1",
-      "machine-2",
       "machine-0",
       "machine-1"
     ]
