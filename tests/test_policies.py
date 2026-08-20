@@ -60,3 +60,19 @@ def test_policy_skips_unhealthy_instances():
     selected = policy.select([healthy, unhealthy], {})
 
     assert selected == healthy
+
+
+def test_experimental_policy_can_be_loaded_by_module_name():
+    from lb_sim.sim import Simulator, SimulationConfig
+
+    config = SimulationConfig(
+        machines=3,
+        ticks=1,
+        clients_per_tick=1,
+        policy_name="experimental.least_latency:LeastLatencyPolicy",
+        seed=5,
+    )
+
+    policy = Simulator(config)._create_policy(config.policy_name)
+
+    assert policy.__class__.__name__ == "LeastLatencyPolicy"

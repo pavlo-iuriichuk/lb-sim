@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import json
 import random
 from dataclasses import dataclass, field
@@ -12,6 +13,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from .domain import Client, Instance, LoadBalancer
+from .experimental import LeastLatencyPolicy
 from .policies import (
     LeastConnectionsPolicy,
     PickTwoRandomThenLeastLoadedPolicy,
@@ -24,6 +26,8 @@ POLICY_MAP = {
     "round_robin": RoundRobinPolicy,
     "least_connections": LeastConnectionsPolicy,
     "pick_two_random": PickTwoRandomThenLeastLoadedPolicy,
+    "experimental.least_latency:LeastLatencyPolicy": LeastLatencyPolicy,
+    "experimental.least_latency": LeastLatencyPolicy,
 }
 
 
@@ -97,12 +101,44 @@ class Simulator:
         self.policy = self._create_policy(config.policy_name)
 
     def _create_policy(self, policy_name: str) -> Policy:
-        try:
-            policy_cls = POLICY_MAP[policy_name]
-        except KeyError as exc:
-            raise ValueError(f"Unsupported policy: {policy_name}") from exc
+        name = policy_name.strip()
 
-        if policy_name == "pick_two_random":
+        if ":" in name:
+            module_path, class_name = name.split(":", 1)
+            for candidate in (module_path, f"lb_sim.{module_path}"):
+                try:
+                    module = importlib.import_module(candidate)
+                    policy_cls = getattr(module, class_name)
+                    return self._instantiate_policy(policy_cls)
+                except (ImportError, AttributeError):
+                    continue
+            raise ValueError(f"Unsupported policy: {policy_name}")
+
+        if name in POLICY_MAP:
+            policy_cls = POLICY_MAP[name]
+            return self._instantiate_policy(policy_cls)
+
+        for candidate in (name, f"lb_sim.{name}"):
+            try:
+                module = importlib.import_module(candidate)
+                break
+            except ModuleNotFoundError:
+                continue
+        else:
+            raise ValueError(f"Unsupported policy: {policy_name}")
+
+        if hasattr(module, "Policy"):
+            policy_cls = module.Policy
+            return self._instantiate_policy(policy_cls)
+
+        candidates = [getattr(module, obj) for obj in dir(module) if obj.lower().endswith("policy")]
+        if not candidates:
+            raise ValueError(f"Unsupported policy: {policy_name}")
+        policy_cls = candidates[0]
+        return self._instantiate_policy(policy_cls)
+
+    def _instantiate_policy(self, policy_cls: type[Policy]) -> Policy:
+        if policy_cls.__name__ == "PickTwoRandomThenLeastLoadedPolicy":
             return policy_cls(rng_seed=self.config.seed)
         return policy_cls()
 

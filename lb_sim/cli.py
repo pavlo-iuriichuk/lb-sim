@@ -17,7 +17,7 @@ def cli() -> None:
 @click.option("--machines", default=3, type=int, help="Number of backend instances.")
 @click.option("--ticks", default=10, type=int, help="Simulation duration in ticks.")
 @click.option("--clients-per-tick", default=3, type=int, help="Client arrivals per tick.")
-@click.option("--policy", default="round_robin", show_default=True, type=click.Choice(sorted(POLICY_MAP.keys())), help="Load balancing policy.")
+@click.option("--policy", default="round_robin", show_default=True, help="Load balancing policy name or experimental module path, e.g. least_connections or experimental.least_latency:LeastLatencyPolicy.")
 @click.option("--seed", default=0, type=int, help="Random seed for deterministic simulation.")
 @click.option("--failure-rate", default=0.0, type=float, help="per-instance probability of failure before each tick.")
 @click.option("--unhealthy-instances", default="", help="Comma-separated machine names to mark unhealthy from the start, e.g. machine-1,machine-2.")
@@ -56,8 +56,9 @@ def run(
 
 @cli.command()
 def list_policies() -> None:
-    """List built-in policies."""
-    click.echo("\n".join(sorted(POLICY_MAP.keys())))
+    """List built-in and experimental policies."""
+    policies = sorted(POLICY_MAP.keys())
+    click.echo("\n".join(policies))
 
 
 if __name__ == "__main__":
