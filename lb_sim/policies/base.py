@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Iterable, List
+from typing import Any, Iterable, List
 
-if TYPE_CHECKING:
-    from ..domain import Instance
+from ..instance import Instance
 
 
 class Policy(ABC):

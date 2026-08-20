@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import Any, Iterable
 
+from lb_sim.instance import Instance
 from lb_sim.policies.base import Policy
-
-if TYPE_CHECKING:
-    from lb_sim.domain import Instance
 
 
 class LeastLatencyPolicy(Policy):

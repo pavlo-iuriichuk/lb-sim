@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import Any, Iterable
 
+from ..instance import Instance
 from .base import Policy
-
-if TYPE_CHECKING:
-    from ..domain import Instance
 
 
 class PickTwoRandomThenLeastLoadedPolicy(Policy):
