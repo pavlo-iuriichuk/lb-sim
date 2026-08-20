@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from .client_behavior import ClientBehavior, create_client_behavior
 from .domain import Client, Instance, LoadBalancer
 from .experimental import LeastLatencyPolicy
 from .policies import (
@@ -37,6 +38,8 @@ class SimulationConfig:
     ticks: int = 10
     clients_per_tick: int = 3
     policy_name: str = "round_robin"
+    client_behavior: str = "constant"
+    client_behaviour: str | None = None
     client_workload_mean: float = 1.0
     client_workload_stddev: float = 0.5
     failure_rate: float = 0.0
@@ -98,6 +101,7 @@ class Simulator:
     def __init__(self, config: SimulationConfig):
         self.config = config
         self.rng = random.Random(config.seed)
+        self.behavior = self._create_behavior(config.client_behavior or config.client_behaviour or "constant")
         self.policy = self._create_policy(config.policy_name)
 
     def _create_policy(self, policy_name: str) -> Policy:
@@ -142,6 +146,17 @@ class Simulator:
             return policy_cls(rng_seed=self.config.seed)
         return policy_cls()
 
+    def _create_behavior(self, behavior_name: str) -> ClientBehavior:
+        if behavior_name == "constant":
+            return create_client_behavior("constant", base_clients=self.config.clients_per_tick)
+        if behavior_name == "linear":
+            return create_client_behavior("linear", base_clients=self.config.clients_per_tick, slope=1.0)
+        if behavior_name == "exponential":
+            return create_client_behavior("exponential", base_clients=self.config.clients_per_tick, growth_factor=2.0)
+        if behavior_name == "random":
+            return create_client_behavior("random", min_clients=0, max_clients=max(1, self.config.clients_per_tick * 2))
+        return create_client_behavior(behavior_name, base_clients=self.config.clients_per_tick)
+
     def build_instances(self) -> List[Instance]:
         unhealthy_names = {name.strip() for name in self.config.unhealthy_instances.split(",") if name.strip()}
         instances: List[Instance] = []
@@ -164,10 +179,11 @@ class Simulator:
         snapshots: List[Dict[str, Any]] = []
 
         for tick in range(self.config.ticks):
-            for _ in range(self.config.clients_per_tick):
+            arrivals = self.behavior.generate_count(tick, self.rng)
+            for index in range(arrivals):
                 workload = max(0.1, self.rng.gauss(self.config.client_workload_mean, self.config.client_workload_stddev))
                 client = Client(
-                    client_id=f"client-{tick}-{_}",
+                    client_id=f"client-{tick}-{index}",
                     arrival_tick=tick,
                     workload=workload,
                     duration_ticks=max(1, int(self.rng.randint(1, 4))),
@@ -176,6 +192,7 @@ class Simulator:
 
             state = {
                 "tick": tick,
+                "arrivals": arrivals,
                 "instances": [instance.snapshot() for instance in lb.instances],
                 "selection_history": list(lb.selection_history),
             }

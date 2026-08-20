@@ -76,3 +76,22 @@ def test_experimental_policy_can_be_loaded_by_module_name():
     policy = Simulator(config)._create_policy(config.policy_name)
 
     assert policy.__class__.__name__ == "LeastLatencyPolicy"
+
+
+def test_constant_client_behavior_stays_stable():
+    from lb_sim.client_behavior import ConstantClientBehavior
+
+    behavior = ConstantClientBehavior(base_clients=3)
+
+    assert behavior.generate_count(0, __import__("random").Random(1)) == 3
+    assert behavior.generate_count(10, __import__("random").Random(2)) == 3
+
+
+def test_linear_and_exponential_behaviors_scale_with_tick():
+    from lb_sim.client_behavior import ExponentialClientBehavior, LinearClientBehavior
+
+    linear = LinearClientBehavior(base_clients=2, slope=3)
+    exponential = ExponentialClientBehavior(base_clients=2, growth_factor=2.0)
+
+    assert linear.generate_count(2, __import__("random").Random(1)) == 8
+    assert exponential.generate_count(3, __import__("random").Random(1)) == 16

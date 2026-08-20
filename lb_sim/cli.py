@@ -16,8 +16,9 @@ def cli() -> None:
 @cli.command()
 @click.option("--machines", default=3, type=int, help="Number of backend instances.")
 @click.option("--ticks", default=10, type=int, help="Simulation duration in ticks.")
-@click.option("--clients-per-tick", default=3, type=int, help="Client arrivals per tick.")
+@click.option("--clients-per-tick", default=3, type=int, help="Default client arrivals per tick for constant behavior.")
 @click.option("--policy", default="round_robin", show_default=True, help="Load balancing policy name or experimental module path, e.g. least_connections or experimental.least_latency:LeastLatencyPolicy.")
+@click.option("--client-behavior", default="constant", show_default=True, type=click.Choice(["constant", "linear", "exponential", "random"], case_sensitive=False), help="Traffic pattern used to simulate client spikes.")
 @click.option("--seed", default=0, type=int, help="Random seed for deterministic simulation.")
 @click.option("--failure-rate", default=0.0, type=float, help="per-instance probability of failure before each tick.")
 @click.option("--unhealthy-instances", default="", help="Comma-separated machine names to mark unhealthy from the start, e.g. machine-1,machine-2.")
@@ -29,6 +30,7 @@ def run(
     ticks: int,
     clients_per_tick: int,
     policy: str,
+    client_behavior: str,
     seed: int,
     failure_rate: float,
     unhealthy_instances: str,
@@ -41,6 +43,7 @@ def run(
         ticks=ticks,
         clients_per_tick=clients_per_tick,
         policy_name=policy,
+        client_behavior=client_behavior.lower(),
         seed=seed,
         failure_rate=failure_rate,
         unhealthy_instances=unhealthy_instances,
