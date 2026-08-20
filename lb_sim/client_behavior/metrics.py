@@ -50,10 +50,10 @@ class MetricsClientBehavior(ClientBehavior):
                 if not line.strip() or line.strip().startswith("#"):
                     continue
                 if "|" in line:
-                    tick, arrivals = [part.strip() for part in line.split("|", 1)]
+                    raw_tick, raw_arrivals = (part.strip() for part in line.split("|", 1))
                 else:
-                    tick, arrivals = line.strip().split(",", 1)
-                records.append({"tick": int(tick), "arrivals": int(arrivals)})
+                    raw_tick, raw_arrivals = line.strip().split(",", 1)
+                records.append({"tick": int(raw_tick), "arrivals": int(raw_arrivals)})
 
         mapped: dict[int, int] = {}
         for record in records:

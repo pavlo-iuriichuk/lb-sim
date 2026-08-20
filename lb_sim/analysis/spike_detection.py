@@ -31,7 +31,7 @@ def detect_spikes(snapshots: List[Snapshot], z_threshold: float = 2.0) -> List[S
         if z_score >= z_threshold:
             spikes.append(
                 SpikeEvent(
-                    tick=snapshot.get("tick"),
+                    tick=int(snapshot["tick"]),
                     arrivals=count,
                     baseline_mean=baseline_mean,
                     z_score=z_score,

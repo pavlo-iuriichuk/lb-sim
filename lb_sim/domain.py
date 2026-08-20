@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
+
+if TYPE_CHECKING:
+    from .policies.base import Policy
 
 
 @dataclass
@@ -81,7 +84,7 @@ class Client:
 
 
 class LoadBalancer:
-    def __init__(self, policy: Any, instances: Optional[Iterable[Instance]] = None):
+    def __init__(self, policy: Policy, instances: Optional[Iterable[Instance]] = None):
         self.policy = policy
         self.instances: List[Instance] = list(instances or [])
         self.selection_history: List[str] = []

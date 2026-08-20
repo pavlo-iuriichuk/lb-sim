@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from lb_sim.metrics import register_metrics_format, validate_metrics_source
 
 
-def jsonl_loader(source: str | Path):
+def jsonl_loader(source: str | Path) -> list[dict[str, Any]]:
     """Load newline-delimited JSON records.
 
     Each line is a JSON object with at least a tick and instances field.
     """
-    records = []
+    records: list[dict[str, Any]] = []
     for line in Path(source).read_text().splitlines():
         if not line.strip():
             continue

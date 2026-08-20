@@ -5,7 +5,7 @@ import json
 import random
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Callable, Dict, Iterable, List
 
 import matplotlib
 
@@ -25,7 +25,7 @@ from .policies import (
 )
 
 
-POLICY_MAP = {
+POLICY_MAP: Dict[str, Callable[..., Policy]] = {
     "round_robin": RoundRobinPolicy,
     "least_connections": LeastConnectionsPolicy,
     "pick_two_random": PickTwoRandomThenLeastLoadedPolicy,
@@ -150,7 +150,7 @@ class Simulator:
         policy_cls = candidates[0]
         return self._instantiate_policy(policy_cls)
 
-    def _instantiate_policy(self, policy_cls: type[Policy]) -> Policy:
+    def _instantiate_policy(self, policy_cls: Callable[..., Policy]) -> Policy:
         if policy_cls.__name__ == "PickTwoRandomThenLeastLoadedPolicy":
             return policy_cls(rng_seed=self.config.seed)
         return policy_cls()

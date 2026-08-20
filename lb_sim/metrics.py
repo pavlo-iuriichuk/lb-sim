@@ -90,7 +90,8 @@ def load_metrics_source(source: str | Path, format_name: str | None = None) -> l
         return METRICS_FORMATS[suffix](path)
 
     if suffix in {"json", "csv", "tsv", "txt", "text"}:
-        return METRICS_FORMATS.get(suffix, METRICS_FORMATS.get("text"))(path)
+        fallback_loader = METRICS_FORMATS.get(suffix, METRICS_FORMATS["text"])
+        return fallback_loader(path)
 
     raise ValueError(f"Unsupported metrics file type: {path.suffix}")
 

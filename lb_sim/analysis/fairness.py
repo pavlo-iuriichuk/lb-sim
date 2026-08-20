@@ -39,7 +39,7 @@ def analyze_fairness(snapshots: List[Snapshot]) -> FairnessReport:
         healthy_count = sum(1 for inst in instances if inst.get("is_healthy", True))
         timeline.append(
             FairnessSnapshot(
-                tick=snapshot.get("tick"),
+                tick=int(snapshot["tick"]),
                 jains_index_load=jains_fairness_index(loads),
                 jains_index_connections=jains_fairness_index(connections),
                 gini_load=gini_coefficient(loads),

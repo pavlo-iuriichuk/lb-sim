@@ -13,8 +13,25 @@ dependencies = [
   "matplotlib>=3.8.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "mypy>=1.10.0",
+]
+
 [project.scripts]
 lb-sim = "lb_sim.cli:cli"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["lb_sim", "examples", "tests"]
+strict = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["test_analysis", "test_cli", "test_policies"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false

@@ -21,7 +21,7 @@ def detect_failure_events(snapshots: List[Snapshot]) -> List[FailureEvent]:
     closed_events: List[FailureEvent] = []
 
     for snapshot in snapshots:
-        tick = snapshot.get("tick")
+        tick = int(snapshot["tick"])
         for instance in snapshot.get("instances", []):
             name = instance["name"]
             healthy = instance.get("is_healthy", True)
@@ -39,7 +39,7 @@ def detect_failure_events(snapshots: List[Snapshot]) -> List[FailureEvent]:
                     )
                 )
 
-    last_tick = snapshots[-1]["tick"] if snapshots else 0
+    last_tick = int(snapshots[-1]["tick"]) if snapshots else 0
     for name, start_tick in open_start_ticks.items():
         closed_events.append(
             FailureEvent(
