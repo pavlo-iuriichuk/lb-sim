@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import random
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
@@ -284,7 +284,7 @@ class Simulator:
                 "load_spread": max_load - min(workloads) if workloads else 0.0,
                 "connection_spread": max(connections) - min(connections) if connections else 0.0,
             },
-            "patterns": analyze_run(snapshots) if snapshots else {},
+            "patterns": asdict(analyze_run(snapshots)) if snapshots else {},
         }
 
 
@@ -345,5 +345,5 @@ def stress_test_policy(
         "policy": policy_name,
         "runs": runs,
         "per_run": per_run_summaries,
-        "aggregate": aggregate_stress_runs(per_run_summaries),
+        "aggregate": asdict(aggregate_stress_runs(per_run_summaries)),
     }

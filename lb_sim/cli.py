@@ -110,11 +110,13 @@ def compare(policies: tuple[str, ...], machines: int, ticks: int, clients_per_ti
 @click.option("--output", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Optional path to write the analysis report as JSON.")
 def analyze(timeline_path: Path, output: Path | None) -> None:
     """Analyze a captured timeline for load fairness, failure-recovery, and spike-handling patterns."""
+    from dataclasses import asdict
+
     from .analysis import analyze_run
 
     snapshots = json.loads(timeline_path.read_text())
     report = analyze_run(snapshots)
-    rendered = json.dumps(report, indent=2)
+    rendered = json.dumps(asdict(report), indent=2)
     click.echo(rendered)
     if output:
         output.write_text(rendered)

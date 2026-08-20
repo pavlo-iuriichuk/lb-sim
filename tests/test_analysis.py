@@ -48,12 +48,12 @@ def test_detect_failure_events_tracks_down_and_recovered_instances():
 
     events = detect_failure_events(snapshots)
 
-    a_event = next(e for e in events if e["instance"] == "a")
-    b_event = next(e for e in events if e["instance"] == "b")
-    assert a_event["recovered"] is True
-    assert a_event["duration_ticks"] == 2
-    assert b_event["recovered"] is False
-    assert b_event["duration_ticks"] == 0
+    a_event = next(e for e in events if e.instance == "a")
+    b_event = next(e for e in events if e.instance == "b")
+    assert a_event.recovered is True
+    assert a_event.duration_ticks == 2
+    assert b_event.recovered is False
+    assert b_event.duration_ticks == 0
 
 
 def test_summarize_failure_recovery_counts_dropped_requests_during_outages():
@@ -65,10 +65,10 @@ def test_summarize_failure_recovery_counts_dropped_requests_during_outages():
 
     summary = summarize_failure_recovery(snapshots)
 
-    assert summary["total_events"] == 1
-    assert summary["recovered_events"] == 1
-    assert summary["dropped_requests_total"] == 3
-    assert summary["dropped_requests_during_outages"] == 3
+    assert summary.total_events == 1
+    assert summary.recovered_events == 1
+    assert summary.dropped_requests_total == 3
+    assert summary.dropped_requests_during_outages == 3
 
 
 def test_detect_spikes_flags_transient_burst_but_not_steady_baseline():
@@ -78,7 +78,7 @@ def test_detect_spikes_flags_transient_burst_but_not_steady_baseline():
     bursty = [{"tick": t, "arrivals": a} for t, a in enumerate([2, 2, 2, 2, 20, 2, 2, 2, 2, 2])]
     spikes = detect_spikes(bursty)
     assert len(spikes) == 1
-    assert spikes[0]["tick"] == 4
+    assert spikes[0].tick == 4
 
 
 def test_summarize_spike_response_reports_recovery_ticks():
@@ -100,8 +100,8 @@ def test_summarize_spike_response_reports_recovery_ticks():
 
     response = summarize_spike_response(snapshots)
 
-    assert response["spike_count"] == 1
-    assert response["spikes"][0]["recovery_ticks"] == 1
+    assert response.spike_count == 1
+    assert response.spikes[0].recovery_ticks == 1
 
 
 def test_selection_distribution_reports_chi_square_for_uneven_split():
@@ -118,9 +118,9 @@ def test_selection_distribution_reports_chi_square_for_uneven_split():
 
     result = selection_distribution(snapshots)
 
-    assert result["observed_counts"] == {"a": 4, "b": 1}
-    assert result["total_selections"] == 5
-    assert result["chi_square"] > 0.0
+    assert result.observed_counts == {"a": 4, "b": 1}
+    assert result.total_selections == 5
+    assert result.chi_square > 0.0
 
 
 def test_analyze_run_combines_all_reports():
@@ -139,7 +139,10 @@ def test_analyze_run_combines_all_reports():
 
     report = analyze_run(snapshots)
 
-    assert set(report) == {"fairness", "failure_recovery", "spikes", "selection_distribution"}
+    assert report.fairness is not None
+    assert report.failure_recovery is not None
+    assert report.spikes is not None
+    assert report.selection_distribution is not None
 
 
 def test_aggregate_stress_runs_computes_cross_run_statistics():
@@ -150,6 +153,6 @@ def test_aggregate_stress_runs_computes_cross_run_statistics():
 
     aggregate = aggregate_stress_runs(run_summaries)
 
-    assert aggregate["mean_estimated_load"]["mean"] == 15.0
-    assert aggregate["jains_index_load"]["min"] == 0.7
-    assert aggregate["jains_index_load"]["max"] == 0.9
+    assert aggregate.mean_estimated_load.mean == 15.0
+    assert aggregate.jains_index_load.min == 0.7
+    assert aggregate.jains_index_load.max == 0.9
