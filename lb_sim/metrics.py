@@ -5,11 +5,12 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-
 METRICS_FORMATS: dict[str, Callable[[str | Path], list[dict[str, Any]]]] = {}
 
 
-def register_metrics_format(name: str, loader: Callable[[str | Path], list[dict[str, Any]]]) -> None:
+def register_metrics_format(
+    name: str, loader: Callable[[str | Path], list[dict[str, Any]]]
+) -> None:
     METRICS_FORMATS[name.lower()] = loader
 
 
@@ -25,10 +26,14 @@ def validate_metrics_source(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if "instances" not in record:
             raise ValueError(f"Record at index {index} is missing an 'instances' field")
         if not isinstance(record["instances"], list):
-            raise ValueError(f"Record at index {index} has a non-list 'instances' field")
+            raise ValueError(
+                f"Record at index {index} has a non-list 'instances' field"
+            )
         for instance in record["instances"]:
             if not isinstance(instance, dict):
-                raise ValueError(f"Instance record in tick {record['tick']} must be a dictionary")
+                raise ValueError(
+                    f"Instance record in tick {record['tick']} must be a dictionary"
+                )
             if "name" not in instance:
                 raise ValueError(f"Instance in tick {record['tick']} is missing a name")
 
@@ -64,7 +69,9 @@ def _text_loader(source: str | Path) -> list[dict[str, Any]]:
         if len(parts) < 2:
             continue
         tick, instances = parts[0], parts[1:]
-        records.append({"tick": tick, "instances": [{"name": item} for item in instances if item]})
+        records.append(
+            {"tick": tick, "instances": [{"name": item} for item in instances if item]}
+        )
     return validate_metrics_source(records)
 
 
@@ -74,7 +81,9 @@ register_metrics_format("tsv", _csv_loader)
 register_metrics_format("text", _text_loader)
 
 
-def load_metrics_source(source: str | Path, format_name: str | None = None) -> list[dict[str, Any]]:
+def load_metrics_source(
+    source: str | Path, format_name: str | None = None
+) -> list[dict[str, Any]]:
     path = Path(source)
     if not path.exists():
         raise FileNotFoundError(f"Metrics source not found: {source}")

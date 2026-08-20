@@ -49,7 +49,9 @@ def create_client_behavior(name: str, **kwargs: Any) -> ClientBehavior:
         return module.ClientBehavior(**kwargs)  # type: ignore[no-any-return]
 
     for attr_name in dir(module):
-        if attr_name.lower().endswith("clientbehavior") or attr_name.lower().endswith("behavior"):
+        if attr_name.lower().endswith("clientbehavior") or attr_name.lower().endswith(
+            "behavior"
+        ):
             behavior_cls = getattr(module, attr_name)
             if callable(behavior_cls):
                 return behavior_cls(**kwargs)  # type: ignore[no-any-return]

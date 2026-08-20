@@ -35,7 +35,12 @@ def test_cli_runs_smoke_simulation(tmp_path):
 
     summary = json.loads(summary_path.read_text())
     assert "patterns" in summary
-    assert set(summary["patterns"]) == {"fairness", "failure_recovery", "spikes", "selection_distribution"}
+    assert set(summary["patterns"]) == {
+        "fairness",
+        "failure_recovery",
+        "spikes",
+        "selection_distribution",
+    }
 
 
 def test_cli_analyze_reads_timeline_and_writes_report(tmp_path):
@@ -43,19 +48,42 @@ def test_cli_analyze_reads_timeline_and_writes_report(tmp_path):
     run_dir = tmp_path / "run"
     runner.invoke(
         cli,
-        ["run", "--machines", "3", "--ticks", "5", "--clients-per-tick", "2", "--seed", "1", "--output-dir", str(run_dir)],
+        [
+            "run",
+            "--machines",
+            "3",
+            "--ticks",
+            "5",
+            "--clients-per-tick",
+            "2",
+            "--seed",
+            "1",
+            "--output-dir",
+            str(run_dir),
+        ],
     )
 
     analysis_path = tmp_path / "analysis.json"
     result = runner.invoke(
         cli,
-        ["analyze", "--timeline", str(run_dir / "timeline.json"), "--output", str(analysis_path)],
+        [
+            "analyze",
+            "--timeline",
+            str(run_dir / "timeline.json"),
+            "--output",
+            str(analysis_path),
+        ],
     )
 
     assert result.exit_code == 0, result.output
     assert analysis_path.exists()
     report = json.loads(analysis_path.read_text())
-    assert set(report) == {"fairness", "failure_recovery", "spikes", "selection_distribution"}
+    assert set(report) == {
+        "fairness",
+        "failure_recovery",
+        "spikes",
+        "selection_distribution",
+    }
 
 
 def test_cli_stress_test_runs_multiple_seeds_and_writes_report(tmp_path):

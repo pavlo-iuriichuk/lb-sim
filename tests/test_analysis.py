@@ -40,10 +40,34 @@ def test_coefficient_of_variation_zero_for_identical_values():
 
 def test_detect_failure_events_tracks_down_and_recovered_instances():
     snapshots = [
-        {"tick": 0, "instances": [{"name": "a", "is_healthy": True}, {"name": "b", "is_healthy": True}]},
-        {"tick": 1, "instances": [{"name": "a", "is_healthy": False}, {"name": "b", "is_healthy": True}]},
-        {"tick": 2, "instances": [{"name": "a", "is_healthy": False}, {"name": "b", "is_healthy": True}]},
-        {"tick": 3, "instances": [{"name": "a", "is_healthy": True}, {"name": "b", "is_healthy": False}]},
+        {
+            "tick": 0,
+            "instances": [
+                {"name": "a", "is_healthy": True},
+                {"name": "b", "is_healthy": True},
+            ],
+        },
+        {
+            "tick": 1,
+            "instances": [
+                {"name": "a", "is_healthy": False},
+                {"name": "b", "is_healthy": True},
+            ],
+        },
+        {
+            "tick": 2,
+            "instances": [
+                {"name": "a", "is_healthy": False},
+                {"name": "b", "is_healthy": True},
+            ],
+        },
+        {
+            "tick": 3,
+            "instances": [
+                {"name": "a", "is_healthy": True},
+                {"name": "b", "is_healthy": False},
+            ],
+        },
     ]
 
     events = detect_failure_events(snapshots)
@@ -58,9 +82,21 @@ def test_detect_failure_events_tracks_down_and_recovered_instances():
 
 def test_summarize_failure_recovery_counts_dropped_requests_during_outages():
     snapshots = [
-        {"tick": 0, "dropped_requests": 0, "instances": [{"name": "a", "is_healthy": True}]},
-        {"tick": 1, "dropped_requests": 3, "instances": [{"name": "a", "is_healthy": False}]},
-        {"tick": 2, "dropped_requests": 0, "instances": [{"name": "a", "is_healthy": True}]},
+        {
+            "tick": 0,
+            "dropped_requests": 0,
+            "instances": [{"name": "a", "is_healthy": True}],
+        },
+        {
+            "tick": 1,
+            "dropped_requests": 3,
+            "instances": [{"name": "a", "is_healthy": False}],
+        },
+        {
+            "tick": 2,
+            "dropped_requests": 0,
+            "instances": [{"name": "a", "is_healthy": True}],
+        },
     ]
 
     summary = summarize_failure_recovery(snapshots)
@@ -75,7 +111,10 @@ def test_detect_spikes_flags_transient_burst_but_not_steady_baseline():
     steady = [{"tick": t, "arrivals": 3} for t in range(10)]
     assert detect_spikes(steady) == []
 
-    bursty = [{"tick": t, "arrivals": a} for t, a in enumerate([2, 2, 2, 2, 20, 2, 2, 2, 2, 2])]
+    bursty = [
+        {"tick": t, "arrivals": a}
+        for t, a in enumerate([2, 2, 2, 2, 20, 2, 2, 2, 2, 2])
+    ]
     spikes = detect_spikes(bursty)
     assert len(spikes) == 1
     assert spikes[0].tick == 4
@@ -91,8 +130,18 @@ def test_summarize_spike_response_reports_recovery_ticks():
                 "arrivals": arrivals,
                 "dropped_requests": 0,
                 "instances": [
-                    {"name": "a", "estimated_load": loads[0], "current_connections": 0, "is_healthy": True},
-                    {"name": "b", "estimated_load": loads[1], "current_connections": 0, "is_healthy": True},
+                    {
+                        "name": "a",
+                        "estimated_load": loads[0],
+                        "current_connections": 0,
+                        "is_healthy": True,
+                    },
+                    {
+                        "name": "b",
+                        "estimated_load": loads[1],
+                        "current_connections": 0,
+                        "is_healthy": True,
+                    },
                 ],
                 "selection_history": [],
             }
@@ -130,8 +179,20 @@ def test_analyze_run_combines_all_reports():
             "arrivals": 2,
             "dropped_requests": 0,
             "instances": [
-                {"name": "a", "capacity": 10.0, "estimated_load": 1.0, "current_connections": 1, "is_healthy": True},
-                {"name": "b", "capacity": 10.0, "estimated_load": 1.0, "current_connections": 1, "is_healthy": True},
+                {
+                    "name": "a",
+                    "capacity": 10.0,
+                    "estimated_load": 1.0,
+                    "current_connections": 1,
+                    "is_healthy": True,
+                },
+                {
+                    "name": "b",
+                    "capacity": 10.0,
+                    "estimated_load": 1.0,
+                    "current_connections": 1,
+                    "is_healthy": True,
+                },
             ],
             "selection_history": ["a", "b"],
         }
@@ -147,8 +208,14 @@ def test_analyze_run_combines_all_reports():
 
 def test_aggregate_stress_runs_computes_cross_run_statistics():
     run_summaries = [
-        {"mean_estimated_load": 10.0, "patterns": {"fairness": {"mean_jains_index_load": 0.9}}},
-        {"mean_estimated_load": 20.0, "patterns": {"fairness": {"mean_jains_index_load": 0.7}}},
+        {
+            "mean_estimated_load": 10.0,
+            "patterns": {"fairness": {"mean_jains_index_load": 0.9}},
+        },
+        {
+            "mean_estimated_load": 20.0,
+            "patterns": {"fairness": {"mean_jains_index_load": 0.7}},
+        },
     ]
 
     aggregate = aggregate_stress_runs(run_summaries)

@@ -17,7 +17,9 @@ class SelectionDistribution:
 def selection_distribution(snapshots: List[Snapshot]) -> SelectionDistribution:
     """Observed selection share per instance vs. the share its capacity would predict."""
     if not snapshots:
-        return SelectionDistribution(observed_counts={}, expected_share={}, total_selections=0, chi_square=0.0)
+        return SelectionDistribution(
+            observed_counts={}, expected_share={}, total_selections=0, chi_square=0.0
+        )
 
     last = snapshots[-1]
     history = last.get("selection_history", [])
@@ -29,7 +31,9 @@ def selection_distribution(snapshots: List[Snapshot]) -> SelectionDistribution:
     total_capacity = sum(inst.get("capacity", 0.0) for inst in instances) or 1.0
     total_selections = len(history)
 
-    expected_share = {inst["name"]: inst.get("capacity", 0.0) / total_capacity for inst in instances}
+    expected_share = {
+        inst["name"]: inst.get("capacity", 0.0) / total_capacity for inst in instances
+    }
     chi_square = 0.0
     for name, share in expected_share.items():
         expected_count = share * total_selections

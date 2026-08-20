@@ -6,7 +6,9 @@ from lb_sim.client_behavior.base import ClientBehavior
 
 
 class SpikeClientBehavior(ClientBehavior):
-    def __init__(self, base_clients: int = 1, spike_tick: int = 5, spike_multiplier: float = 2.0) -> None:
+    def __init__(
+        self, base_clients: int = 1, spike_tick: int = 5, spike_multiplier: float = 2.0
+    ) -> None:
         self.base_clients = max(0, int(base_clients))
         self.spike_tick = int(spike_tick)
         self.spike_multiplier = max(1.0, float(spike_multiplier))

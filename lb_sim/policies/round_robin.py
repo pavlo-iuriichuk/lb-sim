@@ -12,7 +12,9 @@ class RoundRobinPolicy(Policy):
     def __init__(self) -> None:
         self._counter = 0
 
-    def select(self, instances: Iterable[Instance], context: dict[str, Any] | None = None) -> Instance:
+    def select(
+        self, instances: Iterable[Instance], context: dict[str, Any] | None = None
+    ) -> Instance:
         healthy = self._healthy_instances(instances)
         if not healthy:
             raise ValueError("No healthy instances available")

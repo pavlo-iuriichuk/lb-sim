@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 class LeastLatencyPolicy(Policy):
     """Experimental policy: prefer the healthiest, lowest-latency instance."""
 
-    def select(self, instances: Iterable[Instance], context: dict[str, Any] | None = None) -> Instance:
+    def select(
+        self, instances: Iterable[Instance], context: dict[str, Any] | None = None
+    ) -> Instance:
         healthy = self._healthy_instances(instances)
         if not healthy:
             raise ValueError("No healthy instances available")

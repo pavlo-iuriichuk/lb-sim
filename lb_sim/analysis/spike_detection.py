@@ -15,7 +15,9 @@ class SpikeEvent:
     z_score: float
 
 
-def detect_spikes(snapshots: List[Snapshot], z_threshold: float = 2.0) -> List[SpikeEvent]:
+def detect_spikes(
+    snapshots: List[Snapshot], z_threshold: float = 2.0
+) -> List[SpikeEvent]:
     """Flag ticks whose arrival count is a statistical outlier vs. the run's own baseline."""
     arrivals = [snapshot.get("arrivals", 0) for snapshot in snapshots]
     if len(arrivals) < 3:

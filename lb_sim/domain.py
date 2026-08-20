@@ -44,10 +44,15 @@ class Instance:
 
     def add_connection(self, client: "Client") -> None:
         if not self.is_healthy:
-            raise ValueError(f"Instance {self.name} is unhealthy and cannot take traffic")
+            raise ValueError(
+                f"Instance {self.name} is unhealthy and cannot take traffic"
+            )
         self.current_connections += 1
         self.estimated_load += max(0.0, getattr(client, "workload", 0.0))
-        self.cpu_usage = min(1.0, self.utilization() + (self.current_connections / max(self.capacity, 1.0)))
+        self.cpu_usage = min(
+            1.0,
+            self.utilization() + (self.current_connections / max(self.capacity, 1.0)),
+        )
 
     def remove_connection(self) -> None:
         self.current_connections = max(0, self.current_connections - 1)
@@ -93,7 +98,9 @@ class LoadBalancer:
         self.instances.append(instance)
 
     def remove_instance(self, instance_name: str) -> None:
-        self.instances = [instance for instance in self.instances if instance.name != instance_name]
+        self.instances = [
+            instance for instance in self.instances if instance.name != instance_name
+        ]
 
     def dispatch(self, client: Client) -> Instance:
         if not self.instances:

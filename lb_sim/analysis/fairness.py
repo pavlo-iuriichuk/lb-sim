@@ -44,7 +44,9 @@ def analyze_fairness(snapshots: List[Snapshot]) -> FairnessReport:
                 jains_index_connections=jains_fairness_index(connections),
                 gini_load=gini_coefficient(loads),
                 load_spread=(max(loads) - min(loads)) if loads else 0.0,
-                connection_spread=(max(connections) - min(connections)) if connections else 0.0,
+                connection_spread=(
+                    (max(connections) - min(connections)) if connections else 0.0
+                ),
                 healthy_instances=healthy_count,
             )
         )

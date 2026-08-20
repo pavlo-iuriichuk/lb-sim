@@ -9,9 +9,17 @@ if TYPE_CHECKING:
 
 
 class LeastConnectionsPolicy(Policy):
-    def select(self, instances: Iterable[Instance], context: dict[str, Any] | None = None) -> Instance:
+    def select(
+        self, instances: Iterable[Instance], context: dict[str, Any] | None = None
+    ) -> Instance:
         healthy = self._healthy_instances(instances)
         if not healthy:
             raise ValueError("No healthy instances available")
 
-        return min(healthy, key=lambda instance: (instance.current_connections, instance.estimated_load))
+        return min(
+            healthy,
+            key=lambda instance: (
+                instance.current_connections,
+                instance.estimated_load,
+            ),
+        )

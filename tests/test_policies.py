@@ -112,8 +112,16 @@ def test_load_metrics_source_from_json_file(tmp_path):
                     "tick": 0,
                     "arrivals": 3,
                     "instances": [
-                        {"name": "machine-0", "current_connections": 4, "estimated_load": 8.0},
-                        {"name": "machine-1", "current_connections": 1, "estimated_load": 4.5},
+                        {
+                            "name": "machine-0",
+                            "current_connections": 4,
+                            "estimated_load": 8.0,
+                        },
+                        {
+                            "name": "machine-1",
+                            "current_connections": 1,
+                            "estimated_load": 4.5,
+                        },
                     ],
                 }
             ]
@@ -139,15 +147,29 @@ def test_simulator_can_replay_metrics_file(tmp_path):
                     "tick": 0,
                     "arrivals": 2,
                     "instances": [
-                        {"name": "machine-0", "current_connections": 4, "estimated_load": 8.0},
-                        {"name": "machine-1", "current_connections": 1, "estimated_load": 4.5},
+                        {
+                            "name": "machine-0",
+                            "current_connections": 4,
+                            "estimated_load": 8.0,
+                        },
+                        {
+                            "name": "machine-1",
+                            "current_connections": 1,
+                            "estimated_load": 4.5,
+                        },
                     ],
                 }
             ]
         )
     )
 
-    config = SimulationConfig(machines=2, ticks=1, policy_name="round_robin", metrics_source=str(metrics_path), seed=1)
+    config = SimulationConfig(
+        machines=2,
+        ticks=1,
+        policy_name="round_robin",
+        metrics_source=str(metrics_path),
+        seed=1,
+    )
     result = Simulator(config).run()
 
     assert result.summary["machines"] == 2
@@ -200,7 +222,12 @@ def test_create_client_behavior_supports_package_and_experimental_paths():
     from lb_sim.client_behavior import create_client_behavior
 
     default_behavior = create_client_behavior("constant", base_clients=5)
-    experimental_behavior = create_client_behavior("experimental.traffic_spike:SpikeClientBehavior", base_clients=2, spike_tick=2, spike_multiplier=4)
+    experimental_behavior = create_client_behavior(
+        "experimental.traffic_spike:SpikeClientBehavior",
+        base_clients=2,
+        spike_tick=2,
+        spike_multiplier=4,
+    )
 
     assert default_behavior.generate_count(0, __import__("random").Random(1)) == 5
     assert experimental_behavior.generate_count(2, __import__("random").Random(1)) >= 8
@@ -209,7 +236,14 @@ def test_create_client_behavior_supports_package_and_experimental_paths():
 def test_failure_rate_causes_dynamic_failure_and_recovery_during_run():
     from lb_sim.sim import SimulationConfig, Simulator
 
-    config = SimulationConfig(machines=4, ticks=30, clients_per_tick=3, policy_name="least_connections", failure_rate=0.3, seed=11)
+    config = SimulationConfig(
+        machines=4,
+        ticks=30,
+        clients_per_tick=3,
+        policy_name="least_connections",
+        failure_rate=0.3,
+        seed=11,
+    )
     result = Simulator(config).run(save=False)
 
     events = result.summary["patterns"]["failure_recovery"]["events"]
@@ -220,7 +254,14 @@ def test_failure_rate_causes_dynamic_failure_and_recovery_during_run():
 def test_zero_failure_rate_keeps_instances_healthy_throughout():
     from lb_sim.sim import SimulationConfig, Simulator
 
-    config = SimulationConfig(machines=3, ticks=10, clients_per_tick=2, policy_name="round_robin", failure_rate=0.0, seed=1)
+    config = SimulationConfig(
+        machines=3,
+        ticks=10,
+        clients_per_tick=2,
+        policy_name="round_robin",
+        failure_rate=0.0,
+        seed=1,
+    )
     result = Simulator(config).run(save=False)
 
     assert result.summary["patterns"]["failure_recovery"]["total_events"] == 0
@@ -242,7 +283,9 @@ def test_forced_unhealthy_instance_stays_down_even_with_dynamic_failures():
     result = Simulator(config).run(save=False)
 
     last_snapshot = result.snapshots[-1]
-    forced = next(inst for inst in last_snapshot["instances"] if inst["name"] == "machine-0")
+    forced = next(
+        inst for inst in last_snapshot["instances"] if inst["name"] == "machine-0"
+    )
     assert forced["is_healthy"] is False
 
 
@@ -268,11 +311,18 @@ def test_stress_test_policy_aggregates_statistics_across_seeds():
 def test_summary_includes_pattern_analysis():
     from lb_sim.sim import SimulationConfig, Simulator
 
-    config = SimulationConfig(machines=3, ticks=5, clients_per_tick=2, policy_name="round_robin", seed=4)
+    config = SimulationConfig(
+        machines=3, ticks=5, clients_per_tick=2, policy_name="round_robin", seed=4
+    )
     result = Simulator(config).run(save=False)
 
     patterns = result.summary["patterns"]
-    assert set(patterns) == {"fairness", "failure_recovery", "spikes", "selection_distribution"}
+    assert set(patterns) == {
+        "fairness",
+        "failure_recovery",
+        "spikes",
+        "selection_distribution",
+    }
 
 
 def test_metrics_driven_client_behavior_uses_arrivals_data(tmp_path):

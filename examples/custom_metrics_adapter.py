@@ -27,11 +27,9 @@ register_metrics_format("jsonl", jsonl_loader)
 if __name__ == "__main__":
     sample_path = Path("examples/sample_metrics.jsonl")
     sample_path.parent.mkdir(exist_ok=True)
-    sample_path.write_text(
-        """\
+    sample_path.write_text("""\
 {"tick": 0, "instances": [{"name": "machine-0", "current_connections": 2, "estimated_load": 4.0}]}
 {"tick": 1, "instances": [{"name": "machine-0", "current_connections": 5, "estimated_load": 8.0}]}
-"""
-    )
+""")
     print(f"Registered format: jsonl")
     print(f"Loaded {len(jsonl_loader(sample_path))} records")

@@ -24,7 +24,6 @@ from .policies import (
     RoundRobinPolicy,
 )
 
-
 POLICY_MAP: Dict[str, Callable[..., Policy]] = {
     "round_robin": RoundRobinPolicy,
     "least_connections": LeastConnectionsPolicy,
@@ -68,11 +67,17 @@ class SimulationResult:
             ticks = [snapshot["tick"] for snapshot in self.snapshots]
             names = [inst["name"] for inst in self.snapshots[0]["instances"]]
             connection_series = {
-                name: [snapshot["instances"][idx]["current_connections"] for snapshot in self.snapshots]
+                name: [
+                    snapshot["instances"][idx]["current_connections"]
+                    for snapshot in self.snapshots
+                ]
                 for idx, name in enumerate(names)
             }
             load_series = {
-                name: [snapshot["instances"][idx]["estimated_load"] for snapshot in self.snapshots]
+                name: [
+                    snapshot["instances"][idx]["estimated_load"]
+                    for snapshot in self.snapshots
+                ]
                 for idx, name in enumerate(names)
             }
 
@@ -105,10 +110,16 @@ class Simulator:
     def __init__(self, config: SimulationConfig):
         self.config = config
         self.rng = random.Random(config.seed)
-        self.behavior = self._create_behavior(config.client_behavior or config.client_behaviour or "constant")
+        self.behavior = self._create_behavior(
+            config.client_behavior or config.client_behaviour or "constant"
+        )
         self.policy = self._create_policy(config.policy_name)
         self.metrics = (
-            validate_metrics_source(load_metrics_source(config.metrics_source, format_name=config.metrics_format))
+            validate_metrics_source(
+                load_metrics_source(
+                    config.metrics_source, format_name=config.metrics_format
+                )
+            )
             if config.metrics_source
             else []
         )
@@ -144,7 +155,11 @@ class Simulator:
             policy_cls = module.Policy
             return self._instantiate_policy(policy_cls)
 
-        candidates = [getattr(module, obj) for obj in dir(module) if obj.lower().endswith("policy")]
+        candidates = [
+            getattr(module, obj)
+            for obj in dir(module)
+            if obj.lower().endswith("policy")
+        ]
         if not candidates:
             raise ValueError(f"Unsupported policy: {policy_name}")
         policy_cls = candidates[0]
@@ -157,37 +172,70 @@ class Simulator:
 
     def _create_behavior(self, behavior_name: str) -> ClientBehavior:
         if behavior_name == "constant":
-            return create_client_behavior("constant", base_clients=self.config.clients_per_tick)
+            return create_client_behavior(
+                "constant", base_clients=self.config.clients_per_tick
+            )
         if behavior_name == "linear":
-            return create_client_behavior("linear", base_clients=self.config.clients_per_tick, slope=1.0)
+            return create_client_behavior(
+                "linear", base_clients=self.config.clients_per_tick, slope=1.0
+            )
         if behavior_name == "exponential":
-            return create_client_behavior("exponential", base_clients=self.config.clients_per_tick, growth_factor=2.0)
+            return create_client_behavior(
+                "exponential",
+                base_clients=self.config.clients_per_tick,
+                growth_factor=2.0,
+            )
         if behavior_name == "random":
-            return create_client_behavior("random", min_clients=0, max_clients=max(1, self.config.clients_per_tick * 2))
-        return create_client_behavior(behavior_name, base_clients=self.config.clients_per_tick)
+            return create_client_behavior(
+                "random",
+                min_clients=0,
+                max_clients=max(1, self.config.clients_per_tick * 2),
+            )
+        return create_client_behavior(
+            behavior_name, base_clients=self.config.clients_per_tick
+        )
 
     def build_instances(self) -> List[Instance]:
-        unhealthy_names = {name.strip() for name in self.config.unhealthy_instances.split(",") if name.strip()}
+        unhealthy_names = {
+            name.strip()
+            for name in self.config.unhealthy_instances.split(",")
+            if name.strip()
+        }
         instances: List[Instance] = []
         for index in range(self.config.machines):
             machine_name = f"machine-{index}"
-            failure_rate = self.config.failure_rate if index % 2 == 0 else self.config.failure_rate * 0.5
+            failure_rate = (
+                self.config.failure_rate
+                if index % 2 == 0
+                else self.config.failure_rate * 0.5
+            )
             instance = Instance(
                 name=machine_name,
                 capacity=10.0 + index,
                 estimated_load=0.0,
                 failure_rate=failure_rate,
             )
-            if machine_name in unhealthy_names or (index == 0 and self.config.failure_rate >= 1.0):
+            if machine_name in unhealthy_names or (
+                index == 0 and self.config.failure_rate >= 1.0
+            ):
                 instance.is_healthy = False
             instances.append(instance)
         return instances
 
     def _generate_client_workload(self) -> float:
-        return max(0.1, self.rng.gauss(self.config.client_workload_mean, self.config.client_workload_stddev))
+        return max(
+            0.1,
+            self.rng.gauss(
+                self.config.client_workload_mean, self.config.client_workload_stddev
+            ),
+        )
 
-    def _dispatch_client(self, lb: LoadBalancer, tick: int, index: int, *, replay: bool = False) -> bool:
-        client_id = f"replay-client-{tick}-{index}" if replay else f"client-{tick}-{index}"
+    def _dispatch_client(
+        self, lb: LoadBalancer, tick: int, index: int, *, replay: bool = False
+    ) -> bool:
+        client_id = (
+            f"replay-client-{tick}-{index}" if replay else f"client-{tick}-{index}"
+        )
         client = Client(
             client_id=client_id,
             arrival_tick=tick,
@@ -204,13 +252,19 @@ class Simulator:
         """Probabilistically fail/recover instances each tick based on their failure_rate."""
         if self.config.failure_rate <= 0:
             return
-        forced_unhealthy = {name.strip() for name in self.config.unhealthy_instances.split(",") if name.strip()}
+        forced_unhealthy = {
+            name.strip()
+            for name in self.config.unhealthy_instances.split(",")
+            if name.strip()
+        }
         for instance in lb.instances:
             if instance.name in forced_unhealthy:
                 continue
             instance.update_health(self.rng.random())
 
-    def _build_snapshot(self, lb: LoadBalancer, tick: int, arrivals: int, dropped: int = 0) -> Dict[str, Any]:
+    def _build_snapshot(
+        self, lb: LoadBalancer, tick: int, arrivals: int, dropped: int = 0
+    ) -> Dict[str, Any]:
         return {
             "tick": tick,
             "arrivals": arrivals,
@@ -219,14 +273,23 @@ class Simulator:
             "selection_history": list(lb.selection_history),
         }
 
-    def _apply_metric_snapshot(self, lb: LoadBalancer, tick_record: Dict[str, Any]) -> None:
+    def _apply_metric_snapshot(
+        self, lb: LoadBalancer, tick_record: Dict[str, Any]
+    ) -> None:
         for item in tick_record.get("instances", []):
             name = item.get("name")
-            instance = next((candidate for candidate in lb.instances if candidate.name == name), None)
+            instance = next(
+                (candidate for candidate in lb.instances if candidate.name == name),
+                None,
+            )
             if instance is None:
                 continue
-            instance.current_connections = int(item.get("current_connections", instance.current_connections))
-            instance.estimated_load = float(item.get("estimated_load", instance.estimated_load))
+            instance.current_connections = int(
+                item.get("current_connections", instance.current_connections)
+            )
+            instance.estimated_load = float(
+                item.get("estimated_load", instance.estimated_load)
+            )
             instance.is_healthy = bool(item.get("is_healthy", instance.is_healthy))
             instance.cpu_usage = float(item.get("cpu_usage", instance.cpu_usage))
             instance.latency_ms = float(item.get("latency_ms", instance.latency_ms))
@@ -238,7 +301,11 @@ class Simulator:
             arrivals = int(tick_record.get("arrivals", 0))
             self._apply_metric_snapshot(lb, tick_record)
 
-            dropped = sum(1 for index in range(arrivals) if not self._dispatch_client(lb, tick, index, replay=True))
+            dropped = sum(
+                1
+                for index in range(arrivals)
+                if not self._dispatch_client(lb, tick, index, replay=True)
+            )
 
             snapshots.append(self._build_snapshot(lb, tick, arrivals, dropped))
         return snapshots
@@ -248,30 +315,48 @@ class Simulator:
         for tick in range(self.config.ticks):
             self._update_instance_health(lb)
             arrivals = self.behavior.generate_count(tick, self.rng)
-            dropped = sum(1 for index in range(arrivals) if not self._dispatch_client(lb, tick, index))
+            dropped = sum(
+                1
+                for index in range(arrivals)
+                if not self._dispatch_client(lb, tick, index)
+            )
             snapshots.append(self._build_snapshot(lb, tick, arrivals, dropped))
         return snapshots
 
     def run(self, save: bool = True) -> SimulationResult:
         lb = LoadBalancer(self.policy, self.build_instances())
-        snapshots = self._replay_metrics(lb) if self.metrics else self._simulate_ticks(lb)
+        snapshots = (
+            self._replay_metrics(lb) if self.metrics else self._simulate_ticks(lb)
+        )
 
         summary = self._summarize(snapshots)
-        result = SimulationResult(config=self.config, snapshots=snapshots, summary=summary)
+        result = SimulationResult(
+            config=self.config, snapshots=snapshots, summary=summary
+        )
         if save:
             result.save(self.config.output_dir)
         return result
 
     def _summarize(self, snapshots: List[Dict[str, Any]]) -> Dict[str, Any]:
         last_snapshot = snapshots[-1] if snapshots else {"instances": []}
-        workloads = [instance["estimated_load"] for instance in last_snapshot["instances"]]
-        connections = [instance["current_connections"] for instance in last_snapshot["instances"]]
+        workloads = [
+            instance["estimated_load"] for instance in last_snapshot["instances"]
+        ]
+        connections = [
+            instance["current_connections"] for instance in last_snapshot["instances"]
+        ]
 
         mean_load = sum(workloads) / len(workloads) if workloads else 0.0
         mean_connections = sum(connections) / len(connections) if connections else 0.0
         max_load = max(workloads) if workloads else 0.0
-        selected_count = len(last_snapshot["selection_history"]) if last_snapshot.get("selection_history") else 0
-        dropped_requests = sum(snapshot.get("dropped_requests", 0) for snapshot in snapshots)
+        selected_count = (
+            len(last_snapshot["selection_history"])
+            if last_snapshot.get("selection_history")
+            else 0
+        )
+        dropped_requests = sum(
+            snapshot.get("dropped_requests", 0) for snapshot in snapshots
+        )
 
         return {
             "machines": len(last_snapshot["instances"]),
@@ -282,13 +367,17 @@ class Simulator:
             "dropped_requests": dropped_requests,
             "fairness": {
                 "load_spread": max_load - min(workloads) if workloads else 0.0,
-                "connection_spread": max(connections) - min(connections) if connections else 0.0,
+                "connection_spread": (
+                    max(connections) - min(connections) if connections else 0.0
+                ),
             },
             "patterns": asdict(analyze_run(snapshots)) if snapshots else {},
         }
 
 
-def compare_policies(policy_names: Iterable[str], config: SimulationConfig | None = None) -> dict[str, dict[str, Any]]:
+def compare_policies(
+    policy_names: Iterable[str], config: SimulationConfig | None = None
+) -> dict[str, dict[str, Any]]:
     base_config = config or SimulationConfig()
     summaries: dict[str, dict[str, Any]] = {}
     for policy_name in policy_names:
@@ -325,7 +414,8 @@ def stress_test_policy(
     client_workload_stddev: float = 0.5,
 ) -> Dict[str, Any]:
     """Run a policy across many randomized seeds to statistically characterize its fairness,
-    failure-recovery, and spike-handling behavior rather than relying on a single run."""
+    failure-recovery, and spike-handling behavior rather than relying on a single run.
+    """
     per_run_summaries: List[Dict[str, Any]] = []
     for offset in range(runs):
         config = SimulationConfig(

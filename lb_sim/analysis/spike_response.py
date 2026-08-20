@@ -37,14 +37,18 @@ def summarize_spike_response(
     fairness = fairness if fairness is not None else analyze_fairness(snapshots)
     jains_by_tick = {point.tick: point.jains_index_load for point in fairness.timeline}
     spread_by_tick = {point.tick: point.load_spread for point in fairness.timeline}
-    dropped_by_tick = {snapshot["tick"]: snapshot.get("dropped_requests", 0) for snapshot in snapshots}
+    dropped_by_tick = {
+        snapshot["tick"]: snapshot.get("dropped_requests", 0) for snapshot in snapshots
+    }
     ticks = [snapshot["tick"] for snapshot in snapshots]
 
     responses: List[SpikeResponse] = []
     for spike in spikes:
         tick = spike.tick
         pre_ticks = [t for t in ticks if tick - window <= t < tick]
-        baseline_jains = mean([jains_by_tick[t] for t in pre_ticks]) if pre_ticks else 1.0
+        baseline_jains = (
+            mean([jains_by_tick[t] for t in pre_ticks]) if pre_ticks else 1.0
+        )
         threshold = baseline_jains * 0.95
 
         recovery_ticks: Optional[int] = None
@@ -65,7 +69,9 @@ def summarize_spike_response(
             )
         )
 
-    recovery_values = [r.recovery_ticks for r in responses if r.recovery_ticks is not None]
+    recovery_values = [
+        r.recovery_ticks for r in responses if r.recovery_ticks is not None
+    ]
 
     return SpikeReport(
         spikes=responses,

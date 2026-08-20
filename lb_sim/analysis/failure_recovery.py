@@ -28,11 +28,15 @@ def summarize_failure_recovery(snapshots: List[Snapshot]) -> FailureRecoveryRepo
     outage_ticks = {
         snapshot["tick"]
         for snapshot in snapshots
-        if any(not inst.get("is_healthy", True) for inst in snapshot.get("instances", []))
+        if any(
+            not inst.get("is_healthy", True) for inst in snapshot.get("instances", [])
+        )
     }
     dropped_total = sum(snapshot.get("dropped_requests", 0) for snapshot in snapshots)
     dropped_during_outages = sum(
-        snapshot.get("dropped_requests", 0) for snapshot in snapshots if snapshot.get("tick") in outage_ticks
+        snapshot.get("dropped_requests", 0)
+        for snapshot in snapshots
+        if snapshot.get("tick") in outage_ticks
     )
 
     return FailureRecoveryReport(

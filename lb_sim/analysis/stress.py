@@ -43,12 +43,18 @@ def aggregate_stress_runs(run_summaries: List[Dict[str, Any]]) -> StressAggregat
         mean_estimated_load=stat_summary(extract(["mean_estimated_load"])),
         max_estimated_load=stat_summary(extract(["max_estimated_load"])),
         load_spread=stat_summary(extract(["fairness", "load_spread"])),
-        jains_index_load=stat_summary(extract(["patterns", "fairness", "mean_jains_index_load"])),
+        jains_index_load=stat_summary(
+            extract(["patterns", "fairness", "mean_jains_index_load"])
+        ),
         gini_load=stat_summary(extract(["patterns", "fairness", "mean_gini_load"])),
         failure_recovery_ticks_mean=stat_summary(
             extract(["patterns", "failure_recovery", "recovery_ticks", "mean"])
         ),
-        dropped_requests_total=stat_summary(extract(["patterns", "failure_recovery", "dropped_requests_total"])),
+        dropped_requests_total=stat_summary(
+            extract(["patterns", "failure_recovery", "dropped_requests_total"])
+        ),
         spike_count=stat_summary(extract(["patterns", "spikes", "spike_count"])),
-        spike_recovery_ticks_mean=stat_summary(extract(["patterns", "spikes", "recovery_ticks", "mean"])),
+        spike_recovery_ticks_mean=stat_summary(
+            extract(["patterns", "spikes", "recovery_ticks", "mean"])
+        ),
     )

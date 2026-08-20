@@ -5,13 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-pip install -e '.[dev]'  # install lb-sim + its CLI entry point + pytest/mypy in editable mode
+pip install -e '.[dev]'  # install lb-sim + its CLI entry point + pytest/mypy/black in editable mode
 
 python -m pytest -q                          # run full test suite
 python -m pytest tests/test_policies.py -q   # run one test file
 python -m pytest tests/test_policies.py::test_round_robin_cycles_instances -q  # run a single test
 
-python -m mypy           # type-check lb_sim, examples, and tests (config lives in pyproject.toml)
+python -m mypy                                     # type-check lb_sim, examples, and tests
+python -m black lb_sim examples tests              # format in place
+python -m black --check lb_sim examples tests      # verify formatting without writing (CI-style)
 
 lb-sim run --machines 4 --ticks 50 --policy round_robin        # run a simulation, writes to ./output
 lb-sim compare --policy round_robin --policy least_connections # compare policies head-to-head
@@ -21,7 +23,7 @@ lb-sim stress-test --policy least_connections --runs 20 --failure-rate 0.1  # ma
 lb-sim list-policies                                            # list built-in + experimental policies
 ```
 
-There is no separate lint command; mypy is the only static check configured. `[tool.mypy]` in `pyproject.toml` runs in `strict` mode for `lb_sim`/`examples`, with an override relaxing `disallow_untyped_defs`/`disallow_incomplete_defs` for the three top-level test modules (`test_analysis`, `test_cli`, `test_policies` — they have no `__init__.py`, so mypy sees them as top-level module names, not `tests.*`).
+mypy is the only static type check configured; `[tool.mypy]` in `pyproject.toml` runs in `strict` mode for `lb_sim`/`examples`, with an override relaxing `disallow_untyped_defs`/`disallow_incomplete_defs` for the three top-level test modules (`test_analysis`, `test_cli`, `test_policies` — they have no `__init__.py`, so mypy sees them as top-level module names, not `tests.*`). Formatting is black with default settings (`line-length = 88` in `[tool.black]`, explicitly pinned against future default changes) — no other linter is configured.
 
 ## Architecture
 

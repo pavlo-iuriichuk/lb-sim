@@ -16,17 +16,69 @@ def cli() -> None:
 @cli.command()
 @click.option("--machines", default=3, type=int, help="Number of backend instances.")
 @click.option("--ticks", default=10, type=int, help="Simulation duration in ticks.")
-@click.option("--clients-per-tick", default=3, type=int, help="Default client arrivals per tick for constant behavior.")
-@click.option("--policy", default="round_robin", show_default=True, help="Load balancing policy name or experimental module path, e.g. least_connections or experimental.least_latency:LeastLatencyPolicy.")
-@click.option("--client-behavior", default="constant", show_default=True, type=click.Choice(["constant", "linear", "exponential", "random"], case_sensitive=False), help="Traffic pattern used to simulate client spikes.")
-@click.option("--seed", default=0, type=int, help="Random seed for deterministic simulation.")
-@click.option("--failure-rate", default=0.0, type=float, help="per-instance probability of failure before each tick.")
-@click.option("--unhealthy-instances", default="", help="Comma-separated machine names to mark unhealthy from the start, e.g. machine-1,machine-2.")
-@click.option("--metrics-source", default=None, type=click.Path(exists=False, dir_okay=False, path_type=Path), help="Path to metrics JSON/CSV replay file to simulate or replay an incident from captured data.")
-@click.option("--metrics-format", default=None, type=str, help="Explicit metrics format name, e.g. json, csv, tsv, text, or a custom registered loader name.")
-@click.option("--output-dir", default="output", show_default=True, type=click.Path(file_okay=False, path_type=Path), help="Directory to store simulation output.")
-@click.option("--client-workload-mean", default=1.0, type=float, help="Mean client workload.")
-@click.option("--client-workload-stddev", default=0.5, type=float, help="Standard deviation of client workload.")
+@click.option(
+    "--clients-per-tick",
+    default=3,
+    type=int,
+    help="Default client arrivals per tick for constant behavior.",
+)
+@click.option(
+    "--policy",
+    default="round_robin",
+    show_default=True,
+    help="Load balancing policy name or experimental module path, e.g. least_connections or experimental.least_latency:LeastLatencyPolicy.",
+)
+@click.option(
+    "--client-behavior",
+    default="constant",
+    show_default=True,
+    type=click.Choice(
+        ["constant", "linear", "exponential", "random"], case_sensitive=False
+    ),
+    help="Traffic pattern used to simulate client spikes.",
+)
+@click.option(
+    "--seed", default=0, type=int, help="Random seed for deterministic simulation."
+)
+@click.option(
+    "--failure-rate",
+    default=0.0,
+    type=float,
+    help="per-instance probability of failure before each tick.",
+)
+@click.option(
+    "--unhealthy-instances",
+    default="",
+    help="Comma-separated machine names to mark unhealthy from the start, e.g. machine-1,machine-2.",
+)
+@click.option(
+    "--metrics-source",
+    default=None,
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    help="Path to metrics JSON/CSV replay file to simulate or replay an incident from captured data.",
+)
+@click.option(
+    "--metrics-format",
+    default=None,
+    type=str,
+    help="Explicit metrics format name, e.g. json, csv, tsv, text, or a custom registered loader name.",
+)
+@click.option(
+    "--output-dir",
+    default="output",
+    show_default=True,
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Directory to store simulation output.",
+)
+@click.option(
+    "--client-workload-mean", default=1.0, type=float, help="Mean client workload."
+)
+@click.option(
+    "--client-workload-stddev",
+    default=0.5,
+    type=float,
+    help="Standard deviation of client workload.",
+)
 def run(
     machines: int,
     ticks: int,
@@ -71,11 +123,34 @@ def list_policies() -> None:
 
 
 @cli.command()
-@click.option("--metrics-source", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True, help="Metrics file to validate and replay.")
-@click.option("--metrics-format", default=None, type=str, help="Explicit metrics format name, e.g. json, csv, tsv, text, or a custom registered loader name.")
-@click.option("--policy", default="round_robin", show_default=True, help="Load balancing policy to use while replaying captured metrics.")
-@click.option("--output-dir", default="output", show_default=True, type=click.Path(file_okay=False, path_type=Path), help="Directory to store replay output.")
-def replay(metrics_source: Path, metrics_format: str | None, policy: str, output_dir: Path) -> None:
+@click.option(
+    "--metrics-source",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="Metrics file to validate and replay.",
+)
+@click.option(
+    "--metrics-format",
+    default=None,
+    type=str,
+    help="Explicit metrics format name, e.g. json, csv, tsv, text, or a custom registered loader name.",
+)
+@click.option(
+    "--policy",
+    default="round_robin",
+    show_default=True,
+    help="Load balancing policy to use while replaying captured metrics.",
+)
+@click.option(
+    "--output-dir",
+    default="output",
+    show_default=True,
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Directory to store replay output.",
+)
+def replay(
+    metrics_source: Path, metrics_format: str | None, policy: str, output_dir: Path
+) -> None:
     """Validate and replay captured metrics as a timeline using the selected policy."""
     config = SimulationConfig(
         machines=1,
@@ -91,23 +166,53 @@ def replay(metrics_source: Path, metrics_format: str | None, policy: str, output
 
 
 @cli.command()
-@click.option("--policy", "policies", multiple=True, default=("round_robin", "least_connections"), show_default=True, help="Policies to compare.")
+@click.option(
+    "--policy",
+    "policies",
+    multiple=True,
+    default=("round_robin", "least_connections"),
+    show_default=True,
+    help="Policies to compare.",
+)
 @click.option("--machines", default=3, type=int, help="Number of backend instances.")
 @click.option("--ticks", default=10, type=int, help="Simulation duration in ticks.")
-@click.option("--clients-per-tick", default=3, type=int, help="Client arrivals per tick.")
-@click.option("--seed", default=0, type=int, help="Random seed for deterministic simulation.")
-def compare(policies: tuple[str, ...], machines: int, ticks: int, clients_per_tick: int, seed: int) -> None:
+@click.option(
+    "--clients-per-tick", default=3, type=int, help="Client arrivals per tick."
+)
+@click.option(
+    "--seed", default=0, type=int, help="Random seed for deterministic simulation."
+)
+def compare(
+    policies: tuple[str, ...],
+    machines: int,
+    ticks: int,
+    clients_per_tick: int,
+    seed: int,
+) -> None:
     """Compare multiple policies under the same scenario."""
     from .sim import compare_policies
 
-    config = SimulationConfig(machines=machines, ticks=ticks, clients_per_tick=clients_per_tick, seed=seed)
+    config = SimulationConfig(
+        machines=machines, ticks=ticks, clients_per_tick=clients_per_tick, seed=seed
+    )
     summary = compare_policies(policies, config=config)
     click.echo(json.dumps(summary, indent=2))
 
 
 @cli.command()
-@click.option("--timeline", "timeline_path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True, help="Path to a timeline.json file produced by a previous run or replay.")
-@click.option("--output", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Optional path to write the analysis report as JSON.")
+@click.option(
+    "--timeline",
+    "timeline_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="Path to a timeline.json file produced by a previous run or replay.",
+)
+@click.option(
+    "--output",
+    default=None,
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Optional path to write the analysis report as JSON.",
+)
 def analyze(timeline_path: Path, output: Path | None) -> None:
     """Analyze a captured timeline for load fairness, failure-recovery, and spike-handling patterns."""
     from dataclasses import asdict
@@ -124,17 +229,59 @@ def analyze(timeline_path: Path, output: Path | None) -> None:
 
 
 @cli.command(name="stress-test")
-@click.option("--policy", default="round_robin", show_default=True, help="Load balancing policy name or experimental module path.")
+@click.option(
+    "--policy",
+    default="round_robin",
+    show_default=True,
+    help="Load balancing policy name or experimental module path.",
+)
 @click.option("--machines", default=3, type=int, help="Number of backend instances.")
-@click.option("--ticks", default=50, type=int, help="Simulation duration in ticks per run.")
-@click.option("--clients-per-tick", default=5, type=int, help="Client arrivals per tick.")
-@click.option("--runs", default=20, type=int, help="Number of randomized runs (seeds) to execute.")
-@click.option("--seed", default=0, type=int, help="Base random seed; each run uses seed + run index.")
-@click.option("--failure-rate", default=0.05, type=float, help="Per-instance probability of failure applied before each tick, enabling failure/recovery cycles.")
-@click.option("--client-behavior", default="random", show_default=True, type=click.Choice(["constant", "linear", "exponential", "random"], case_sensitive=False), help="Traffic pattern used to stress the policy.")
-@click.option("--client-workload-mean", default=1.0, type=float, help="Mean client workload.")
-@click.option("--client-workload-stddev", default=0.5, type=float, help="Standard deviation of client workload.")
-@click.option("--output-dir", default="output", show_default=True, type=click.Path(file_okay=False, path_type=Path), help="Directory to store the full stress-test report.")
+@click.option(
+    "--ticks", default=50, type=int, help="Simulation duration in ticks per run."
+)
+@click.option(
+    "--clients-per-tick", default=5, type=int, help="Client arrivals per tick."
+)
+@click.option(
+    "--runs", default=20, type=int, help="Number of randomized runs (seeds) to execute."
+)
+@click.option(
+    "--seed",
+    default=0,
+    type=int,
+    help="Base random seed; each run uses seed + run index.",
+)
+@click.option(
+    "--failure-rate",
+    default=0.05,
+    type=float,
+    help="Per-instance probability of failure applied before each tick, enabling failure/recovery cycles.",
+)
+@click.option(
+    "--client-behavior",
+    default="random",
+    show_default=True,
+    type=click.Choice(
+        ["constant", "linear", "exponential", "random"], case_sensitive=False
+    ),
+    help="Traffic pattern used to stress the policy.",
+)
+@click.option(
+    "--client-workload-mean", default=1.0, type=float, help="Mean client workload."
+)
+@click.option(
+    "--client-workload-stddev",
+    default=0.5,
+    type=float,
+    help="Standard deviation of client workload.",
+)
+@click.option(
+    "--output-dir",
+    default="output",
+    show_default=True,
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Directory to store the full stress-test report.",
+)
 def stress_test(
     policy: str,
     machines: int,
