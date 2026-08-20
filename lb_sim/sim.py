@@ -182,64 +182,64 @@ class Simulator:
             instances.append(instance)
         return instances
 
+    def _generate_client_workload(self) -> float:
+        return max(0.1, self.rng.gauss(self.config.client_workload_mean, self.config.client_workload_stddev))
+
+    def _dispatch_client(self, lb: LoadBalancer, tick: int, index: int, *, replay: bool = False) -> None:
+        client_id = f"replay-client-{tick}-{index}" if replay else f"client-{tick}-{index}"
+        client = Client(
+            client_id=client_id,
+            arrival_tick=tick,
+            workload=self._generate_client_workload(),
+            duration_ticks=max(1, int(self.rng.randint(1, 4))),
+        )
+        lb.dispatch(client)
+
+    def _build_snapshot(self, lb: LoadBalancer, tick: int, arrivals: int) -> Dict[str, Any]:
+        return {
+            "tick": tick,
+            "arrivals": arrivals,
+            "instances": [instance.snapshot() for instance in lb.instances],
+            "selection_history": list(lb.selection_history),
+        }
+
+    def _apply_metric_snapshot(self, lb: LoadBalancer, tick_record: Dict[str, Any]) -> None:
+        for item in tick_record.get("instances", []):
+            name = item.get("name")
+            instance = next((candidate for candidate in lb.instances if candidate.name == name), None)
+            if instance is None:
+                continue
+            instance.current_connections = int(item.get("current_connections", instance.current_connections))
+            instance.estimated_load = float(item.get("estimated_load", instance.estimated_load))
+            instance.is_healthy = bool(item.get("is_healthy", instance.is_healthy))
+            instance.cpu_usage = float(item.get("cpu_usage", instance.cpu_usage))
+            instance.latency_ms = float(item.get("latency_ms", instance.latency_ms))
+
+    def _replay_metrics(self, lb: LoadBalancer) -> List[Dict[str, Any]]:
+        snapshots: List[Dict[str, Any]] = []
+        for tick_record in self.metrics:
+            tick = int(tick_record.get("tick", len(snapshots)))
+            arrivals = int(tick_record.get("arrivals", 0))
+            self._apply_metric_snapshot(lb, tick_record)
+
+            for index in range(arrivals):
+                self._dispatch_client(lb, tick, index, replay=True)
+
+            snapshots.append(self._build_snapshot(lb, tick, arrivals))
+        return snapshots
+
+    def _simulate_ticks(self, lb: LoadBalancer) -> List[Dict[str, Any]]:
+        snapshots: List[Dict[str, Any]] = []
+        for tick in range(self.config.ticks):
+            arrivals = self.behavior.generate_count(tick, self.rng)
+            for index in range(arrivals):
+                self._dispatch_client(lb, tick, index)
+            snapshots.append(self._build_snapshot(lb, tick, arrivals))
+        return snapshots
+
     def run(self) -> SimulationResult:
         lb = LoadBalancer(self.policy, self.build_instances())
-        snapshots: List[Dict[str, Any]] = []
-
-        if self.metrics:
-            for tick_record in self.metrics:
-                tick = int(tick_record.get("tick", len(snapshots)))
-                arrivals = int(tick_record.get("arrivals", 0))
-                instance_state = tick_record.get("instances", [])
-
-                for item in instance_state:
-                    name = item.get("name")
-                    instance = next((candidate for candidate in lb.instances if candidate.name == name), None)
-                    if instance is None:
-                        continue
-                    instance.current_connections = int(item.get("current_connections", instance.current_connections))
-                    instance.estimated_load = float(item.get("estimated_load", instance.estimated_load))
-                    instance.is_healthy = bool(item.get("is_healthy", instance.is_healthy))
-                    instance.cpu_usage = float(item.get("cpu_usage", instance.cpu_usage))
-                    instance.latency_ms = float(item.get("latency_ms", instance.latency_ms))
-
-                for _ in range(arrivals):
-                    workload = max(0.1, self.rng.gauss(self.config.client_workload_mean, self.config.client_workload_stddev))
-                    client = Client(
-                        client_id=f"replay-client-{tick}-{_}",
-                        arrival_tick=tick,
-                        workload=workload,
-                        duration_ticks=max(1, int(self.rng.randint(1, 4))),
-                    )
-                    lb.dispatch(client)
-
-                state = {
-                    "tick": tick,
-                    "arrivals": arrivals,
-                    "instances": [instance.snapshot() for instance in lb.instances],
-                    "selection_history": list(lb.selection_history),
-                }
-                snapshots.append(state)
-        else:
-            for tick in range(self.config.ticks):
-                arrivals = self.behavior.generate_count(tick, self.rng)
-                for index in range(arrivals):
-                    workload = max(0.1, self.rng.gauss(self.config.client_workload_mean, self.config.client_workload_stddev))
-                    client = Client(
-                        client_id=f"client-{tick}-{index}",
-                        arrival_tick=tick,
-                        workload=workload,
-                        duration_ticks=max(1, int(self.rng.randint(1, 4))),
-                    )
-                    lb.dispatch(client)
-
-                state = {
-                    "tick": tick,
-                    "arrivals": arrivals,
-                    "instances": [instance.snapshot() for instance in lb.instances],
-                    "selection_history": list(lb.selection_history),
-                }
-                snapshots.append(state)
+        snapshots = self._replay_metrics(lb) if self.metrics else self._simulate_ticks(lb)
 
         summary = self._summarize(snapshots)
         result = SimulationResult(config=self.config, snapshots=snapshots, summary=summary)
