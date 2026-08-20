@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-pip install -e '.[dev]'  # install lb-sim + its CLI entry point + pytest/mypy/black in editable mode
+pip install -e '.[dev]'  # install lb-sim + its CLI entry point + pytest/mypy/black/import-linter
 
 python -m pytest -q                          # run full test suite
 python -m pytest tests/test_policies.py -q   # run one test file
@@ -14,6 +14,7 @@ python -m pytest tests/test_policies.py::test_round_robin_cycles_instances -q  #
 python -m mypy                                     # type-check lb_sim, examples, and tests
 python -m black lb_sim examples tests              # format in place
 python -m black --check lb_sim examples tests      # verify formatting without writing (CI-style)
+lint-imports                                       # fail if any circular import exists under lb_sim
 
 lb-sim run --machines 4 --ticks 50 --policy round_robin        # run a simulation, writes to ./output
 lb-sim compare --policy round_robin --policy least_connections # compare policies head-to-head
@@ -23,13 +24,15 @@ lb-sim stress-test --policy least_connections --runs 20 --failure-rate 0.1  # ma
 lb-sim list-policies                                            # list built-in + experimental policies
 ```
 
-mypy is the only static type check configured; `[tool.mypy]` in `pyproject.toml` runs in `strict` mode for `lb_sim`/`examples`, with an override relaxing `disallow_untyped_defs`/`disallow_incomplete_defs` for the three top-level test modules (`test_analysis`, `test_cli`, `test_policies` — they have no `__init__.py`, so mypy sees them as top-level module names, not `tests.*`). Formatting is black with default settings (`line-length = 88` in `[tool.black]`, explicitly pinned against future default changes) — no other linter is configured.
+mypy is the only static type check configured; `[tool.mypy]` in `pyproject.toml` runs in `strict` mode for `lb_sim`/`examples`, with an override relaxing `disallow_untyped_defs`/`disallow_incomplete_defs` for the three top-level test modules (`test_analysis`, `test_cli`, `test_policies` — they have no `__init__.py`, so mypy sees them as top-level module names, not `tests.*`). Formatting is black with default settings (`line-length = 88` in `[tool.black]`, explicitly pinned against future default changes). `[tool.importlinter]` runs an `acyclic_siblings` contract over `lb_sim` (see "Import-linter enforces the acyclic dependency graph" below) — no other linter is configured.
 
 ## Architecture
 
 The simulation has a fixed pipeline: `Simulator` (`lb_sim/sim.py`) owns a `LoadBalancer` (`lb_sim/domain.py`) which holds `Instance`s and delegates each `Client` dispatch to a `Policy` (`lb_sim/policies/`). Each tick, a `ClientBehavior` (`lb_sim/client_behavior/`) decides how many clients arrive; the `Simulator` dispatches them and records a snapshot. After the run, `lb_sim/analysis/` computes statistical reports over the full snapshot timeline, and `SimulationResult.save()` writes `timeline.json`, `summary.json`, and two matplotlib PNGs to the output directory.
 
 **`Instance`/`Client` live in their own module (`lb_sim/instance.py`) specifically to keep the dependency graph acyclic.** `LoadBalancer` needs a `Policy`, and every `Policy.select()` needs an `Instance` — two-way at the type level. Rather than paper over that with `TYPE_CHECKING`-guarded imports, `Instance`/`Client` were pulled out of `domain.py` into a standalone module with zero internal imports, so `policies/base.py` (and every concrete policy) can import `Instance` for real. `domain.py` then imports `Policy` from `policies.base` for real too, and re-exports `Client`/`Instance` (so `from lb_sim.domain import Instance` still works everywhere it used to). The result is a strictly layered graph — `instance.py` → `policies/*` → `domain.py` — with no cycle to work around. When a new module needs both types, import `Instance` from `lb_sim.instance` directly; don't import it from `lb_sim.domain` inside `policies/`, and don't have `instance.py` import anything from `policies/` or `domain.py`, or the cycle comes back.
+
+**import-linter enforces that acyclic graph automatically — run `lint-imports` (or it'll be part of any CI check you add) after touching imports.** `[tool.importlinter]` in `pyproject.toml` declares one `acyclic_siblings` contract rooted at `lb_sim`; it walks every descendant package/module and fails the build the moment two of them import each other, directly or transitively — exactly the class of bug the `instance.py` split above was fixing. This turns "don't reintroduce the cycle" from a comment into something that fails loudly: if a new module (or a new import inside an existing one) closes a loop anywhere under `lb_sim`, `lint-imports` reports it by name (e.g. `.b -> .a`) before it becomes a runtime `ImportError`. Run it after adding any new cross-module import, especially inside `policies/`, `client_behavior/`, or `analysis/`, since those are the packages most likely to grow a "needs a type from two directions" situation like the one that motivated `instance.py`.
 
 **Two simulation modes, one entry point.** `Simulator.run()` either generates synthetic ticks (`_simulate_ticks`) or replays a captured metrics file tick-by-tick (`_replay_metrics`), chosen by whether `config.metrics_source` is set. Both paths converge on the same `_build_snapshot`/`_summarize` logic, so replay and live simulation produce identically-shaped output.
 

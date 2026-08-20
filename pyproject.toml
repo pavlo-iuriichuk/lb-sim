@@ -18,6 +18,7 @@ dev = [
   "pytest>=8.0.0",
   "mypy>=1.10.0",
   "black>=24.0.0",
+  "import-linter>=2.0",
 ]
 
 [project.scripts]
@@ -39,3 +40,11 @@ warn_unused_configs = true
 module = ["test_analysis", "test_cli", "test_policies"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+
+[tool.importlinter]
+root_packages = ["lb_sim"]
+
+[[tool.importlinter.contracts]]
+name = "No circular imports within lb_sim"
+type = "acyclic_siblings"
+ancestors = ["lb_sim"]
