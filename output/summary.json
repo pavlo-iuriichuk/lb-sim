@@ -4,8 +4,66 @@
   "mean_connections": 0.5,
   "max_estimated_load": 1.0473540191436521,
   "selection_count": 1,
+  "dropped_requests": 0,
   "fairness": {
     "load_spread": 1.0473540191436521,
     "connection_spread": 1
+  },
+  "patterns": {
+    "fairness": {
+      "timeline": [
+        {
+          "tick": 0,
+          "jains_index_load": 0.5,
+          "jains_index_connections": 0.5,
+          "gini_load": 0.5,
+          "load_spread": 1.0473540191436521,
+          "connection_spread": 1,
+          "healthy_instances": 2
+        }
+      ],
+      "mean_jains_index_load": 0.5,
+      "min_jains_index_load": 0.5,
+      "mean_gini_load": 0.5,
+      "mean_load_spread": 1.0473540191436521,
+      "max_load_spread": 1.0473540191436521
+    },
+    "failure_recovery": {
+      "events": [],
+      "total_events": 0,
+      "recovered_events": 0,
+      "unresolved_events": 0,
+      "recovery_ticks": {
+        "mean": 0.0,
+        "stdev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "outage_tick_count": 0,
+      "dropped_requests_total": 0,
+      "dropped_requests_during_outages": 0
+    },
+    "spikes": {
+      "spikes": [],
+      "spike_count": 0,
+      "recovery_ticks": {
+        "mean": 0.0,
+        "stdev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "unresolved_spikes": 0
+    },
+    "selection_distribution": {
+      "observed_counts": {
+        "machine-0": 1
+      },
+      "expected_share": {
+        "machine-0": 0.47619047619047616,
+        "machine-1": 0.5238095238095238
+      },
+      "total_selections": 1,
+      "chi_square": 1.1
+    }
   }
 }

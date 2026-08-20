@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from .analysis import aggregate_stress_runs, analyze_run
 from .client_behavior import ClientBehavior, create_client_behavior
 from .domain import Client, Instance, LoadBalancer
 from .experimental import LeastLatencyPolicy
@@ -185,7 +186,7 @@ class Simulator:
     def _generate_client_workload(self) -> float:
         return max(0.1, self.rng.gauss(self.config.client_workload_mean, self.config.client_workload_stddev))
 
-    def _dispatch_client(self, lb: LoadBalancer, tick: int, index: int, *, replay: bool = False) -> None:
+    def _dispatch_client(self, lb: LoadBalancer, tick: int, index: int, *, replay: bool = False) -> bool:
         client_id = f"replay-client-{tick}-{index}" if replay else f"client-{tick}-{index}"
         client = Client(
             client_id=client_id,
@@ -193,12 +194,27 @@ class Simulator:
             workload=self._generate_client_workload(),
             duration_ticks=max(1, int(self.rng.randint(1, 4))),
         )
-        lb.dispatch(client)
+        try:
+            lb.dispatch(client)
+            return True
+        except ValueError:
+            return False
 
-    def _build_snapshot(self, lb: LoadBalancer, tick: int, arrivals: int) -> Dict[str, Any]:
+    def _update_instance_health(self, lb: LoadBalancer) -> None:
+        """Probabilistically fail/recover instances each tick based on their failure_rate."""
+        if self.config.failure_rate <= 0:
+            return
+        forced_unhealthy = {name.strip() for name in self.config.unhealthy_instances.split(",") if name.strip()}
+        for instance in lb.instances:
+            if instance.name in forced_unhealthy:
+                continue
+            instance.update_health(self.rng.random())
+
+    def _build_snapshot(self, lb: LoadBalancer, tick: int, arrivals: int, dropped: int = 0) -> Dict[str, Any]:
         return {
             "tick": tick,
             "arrivals": arrivals,
+            "dropped_requests": dropped,
             "instances": [instance.snapshot() for instance in lb.instances],
             "selection_history": list(lb.selection_history),
         }
@@ -222,28 +238,28 @@ class Simulator:
             arrivals = int(tick_record.get("arrivals", 0))
             self._apply_metric_snapshot(lb, tick_record)
 
-            for index in range(arrivals):
-                self._dispatch_client(lb, tick, index, replay=True)
+            dropped = sum(1 for index in range(arrivals) if not self._dispatch_client(lb, tick, index, replay=True))
 
-            snapshots.append(self._build_snapshot(lb, tick, arrivals))
+            snapshots.append(self._build_snapshot(lb, tick, arrivals, dropped))
         return snapshots
 
     def _simulate_ticks(self, lb: LoadBalancer) -> List[Dict[str, Any]]:
         snapshots: List[Dict[str, Any]] = []
         for tick in range(self.config.ticks):
+            self._update_instance_health(lb)
             arrivals = self.behavior.generate_count(tick, self.rng)
-            for index in range(arrivals):
-                self._dispatch_client(lb, tick, index)
-            snapshots.append(self._build_snapshot(lb, tick, arrivals))
+            dropped = sum(1 for index in range(arrivals) if not self._dispatch_client(lb, tick, index))
+            snapshots.append(self._build_snapshot(lb, tick, arrivals, dropped))
         return snapshots
 
-    def run(self) -> SimulationResult:
+    def run(self, save: bool = True) -> SimulationResult:
         lb = LoadBalancer(self.policy, self.build_instances())
         snapshots = self._replay_metrics(lb) if self.metrics else self._simulate_ticks(lb)
 
         summary = self._summarize(snapshots)
         result = SimulationResult(config=self.config, snapshots=snapshots, summary=summary)
-        result.save(self.config.output_dir)
+        if save:
+            result.save(self.config.output_dir)
         return result
 
     def _summarize(self, snapshots: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -255,6 +271,7 @@ class Simulator:
         mean_connections = sum(connections) / len(connections) if connections else 0.0
         max_load = max(workloads) if workloads else 0.0
         selected_count = len(last_snapshot["selection_history"]) if last_snapshot.get("selection_history") else 0
+        dropped_requests = sum(snapshot.get("dropped_requests", 0) for snapshot in snapshots)
 
         return {
             "machines": len(last_snapshot["instances"]),
@@ -262,10 +279,12 @@ class Simulator:
             "mean_connections": mean_connections,
             "max_estimated_load": max_load,
             "selection_count": selected_count,
+            "dropped_requests": dropped_requests,
             "fairness": {
                 "load_spread": max_load - min(workloads) if workloads else 0.0,
                 "connection_spread": max(connections) - min(connections) if connections else 0.0,
             },
+            "patterns": analyze_run(snapshots) if snapshots else {},
         }
 
 
@@ -290,3 +309,41 @@ def compare_policies(policy_names: Iterable[str], config: SimulationConfig | Non
         )
         summaries[policy_name] = Simulator(cfg).run().summary
     return summaries
+
+
+def stress_test_policy(
+    policy_name: str,
+    *,
+    machines: int = 3,
+    ticks: int = 50,
+    clients_per_tick: int = 5,
+    runs: int = 20,
+    seed: int = 0,
+    failure_rate: float = 0.05,
+    client_behavior: str = "random",
+    client_workload_mean: float = 1.0,
+    client_workload_stddev: float = 0.5,
+) -> Dict[str, Any]:
+    """Run a policy across many randomized seeds to statistically characterize its fairness,
+    failure-recovery, and spike-handling behavior rather than relying on a single run."""
+    per_run_summaries: List[Dict[str, Any]] = []
+    for offset in range(runs):
+        config = SimulationConfig(
+            machines=machines,
+            ticks=ticks,
+            clients_per_tick=clients_per_tick,
+            policy_name=policy_name,
+            client_behavior=client_behavior,
+            failure_rate=failure_rate,
+            seed=seed + offset,
+            client_workload_mean=client_workload_mean,
+            client_workload_stddev=client_workload_stddev,
+        )
+        per_run_summaries.append(Simulator(config).run(save=False).summary)
+
+    return {
+        "policy": policy_name,
+        "runs": runs,
+        "per_run": per_run_summaries,
+        "aggregate": aggregate_stress_runs(per_run_summaries),
+    }

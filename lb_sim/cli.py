@@ -105,5 +105,68 @@ def compare(policies: tuple[str, ...], machines: int, ticks: int, clients_per_ti
     click.echo(json.dumps(summary, indent=2))
 
 
+@cli.command()
+@click.option("--timeline", "timeline_path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True, help="Path to a timeline.json file produced by a previous run or replay.")
+@click.option("--output", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Optional path to write the analysis report as JSON.")
+def analyze(timeline_path: Path, output: Path | None) -> None:
+    """Analyze a captured timeline for load fairness, failure-recovery, and spike-handling patterns."""
+    from .analysis import analyze_run
+
+    snapshots = json.loads(timeline_path.read_text())
+    report = analyze_run(snapshots)
+    rendered = json.dumps(report, indent=2)
+    click.echo(rendered)
+    if output:
+        output.write_text(rendered)
+        click.echo(f"Analysis written to: {output}")
+
+
+@cli.command(name="stress-test")
+@click.option("--policy", default="round_robin", show_default=True, help="Load balancing policy name or experimental module path.")
+@click.option("--machines", default=3, type=int, help="Number of backend instances.")
+@click.option("--ticks", default=50, type=int, help="Simulation duration in ticks per run.")
+@click.option("--clients-per-tick", default=5, type=int, help="Client arrivals per tick.")
+@click.option("--runs", default=20, type=int, help="Number of randomized runs (seeds) to execute.")
+@click.option("--seed", default=0, type=int, help="Base random seed; each run uses seed + run index.")
+@click.option("--failure-rate", default=0.05, type=float, help="Per-instance probability of failure applied before each tick, enabling failure/recovery cycles.")
+@click.option("--client-behavior", default="random", show_default=True, type=click.Choice(["constant", "linear", "exponential", "random"], case_sensitive=False), help="Traffic pattern used to stress the policy.")
+@click.option("--client-workload-mean", default=1.0, type=float, help="Mean client workload.")
+@click.option("--client-workload-stddev", default=0.5, type=float, help="Standard deviation of client workload.")
+@click.option("--output-dir", default="output", show_default=True, type=click.Path(file_okay=False, path_type=Path), help="Directory to store the full stress-test report.")
+def stress_test(
+    policy: str,
+    machines: int,
+    ticks: int,
+    clients_per_tick: int,
+    runs: int,
+    seed: int,
+    failure_rate: float,
+    client_behavior: str,
+    client_workload_mean: float,
+    client_workload_stddev: float,
+    output_dir: Path,
+) -> None:
+    """Run a policy across many randomized seeds and report aggregate fairness/failure/spike statistics."""
+    from .sim import stress_test_policy
+
+    report = stress_test_policy(
+        policy,
+        machines=machines,
+        ticks=ticks,
+        clients_per_tick=clients_per_tick,
+        runs=runs,
+        seed=seed,
+        failure_rate=failure_rate,
+        client_behavior=client_behavior.lower(),
+        client_workload_mean=client_workload_mean,
+        client_workload_stddev=client_workload_stddev,
+    )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "stress_test.json").write_text(json.dumps(report, indent=2))
+    click.echo(json.dumps(report["aggregate"], indent=2))
+    click.echo(f"Full stress-test report written to: {output_dir / 'stress_test.json'}")
+
+
 if __name__ == "__main__":
     cli()

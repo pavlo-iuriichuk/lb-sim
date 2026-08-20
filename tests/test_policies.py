@@ -206,6 +206,75 @@ def test_create_client_behavior_supports_package_and_experimental_paths():
     assert experimental_behavior.generate_count(2, __import__("random").Random(1)) >= 8
 
 
+def test_failure_rate_causes_dynamic_failure_and_recovery_during_run():
+    from lb_sim.sim import SimulationConfig, Simulator
+
+    config = SimulationConfig(machines=4, ticks=30, clients_per_tick=3, policy_name="least_connections", failure_rate=0.3, seed=11)
+    result = Simulator(config).run(save=False)
+
+    events = result.summary["patterns"]["failure_recovery"]["events"]
+    assert len(events) > 0
+    assert any(event["recovered"] for event in events)
+
+
+def test_zero_failure_rate_keeps_instances_healthy_throughout():
+    from lb_sim.sim import SimulationConfig, Simulator
+
+    config = SimulationConfig(machines=3, ticks=10, clients_per_tick=2, policy_name="round_robin", failure_rate=0.0, seed=1)
+    result = Simulator(config).run(save=False)
+
+    assert result.summary["patterns"]["failure_recovery"]["total_events"] == 0
+    assert result.summary["dropped_requests"] == 0
+
+
+def test_forced_unhealthy_instance_stays_down_even_with_dynamic_failures():
+    from lb_sim.sim import SimulationConfig, Simulator
+
+    config = SimulationConfig(
+        machines=3,
+        ticks=10,
+        clients_per_tick=2,
+        policy_name="round_robin",
+        failure_rate=0.2,
+        unhealthy_instances="machine-0",
+        seed=2,
+    )
+    result = Simulator(config).run(save=False)
+
+    last_snapshot = result.snapshots[-1]
+    forced = next(inst for inst in last_snapshot["instances"] if inst["name"] == "machine-0")
+    assert forced["is_healthy"] is False
+
+
+def test_stress_test_policy_aggregates_statistics_across_seeds():
+    from lb_sim.sim import stress_test_policy
+
+    report = stress_test_policy(
+        "least_connections",
+        machines=3,
+        ticks=15,
+        clients_per_tick=3,
+        runs=4,
+        seed=5,
+        failure_rate=0.1,
+    )
+
+    assert report["runs"] == 4
+    assert len(report["per_run"]) == 4
+    assert "jains_index_load" in report["aggregate"]
+    assert "mean" in report["aggregate"]["jains_index_load"]
+
+
+def test_summary_includes_pattern_analysis():
+    from lb_sim.sim import SimulationConfig, Simulator
+
+    config = SimulationConfig(machines=3, ticks=5, clients_per_tick=2, policy_name="round_robin", seed=4)
+    result = Simulator(config).run(save=False)
+
+    patterns = result.summary["patterns"]
+    assert set(patterns) == {"fairness", "failure_recovery", "spikes", "selection_distribution"}
+
+
 def test_metrics_driven_client_behavior_uses_arrivals_data(tmp_path):
     import json
 
