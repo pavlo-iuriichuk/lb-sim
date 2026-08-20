@@ -194,3 +194,36 @@ def test_load_metrics_source_accepts_explicit_format_name(tmp_path):
     result = load_metrics_source(metrics_path, format_name="text")
 
     assert result[0]["tick"] == "0"
+
+
+def test_create_client_behavior_supports_package_and_experimental_paths():
+    from lb_sim.client_behavior import create_client_behavior
+
+    default_behavior = create_client_behavior("constant", base_clients=5)
+    experimental_behavior = create_client_behavior("experimental.traffic_spike:SpikeClientBehavior", base_clients=2, spike_tick=2, spike_multiplier=4)
+
+    assert default_behavior.generate_count(0, __import__("random").Random(1)) == 5
+    assert experimental_behavior.generate_count(2, __import__("random").Random(1)) >= 8
+
+
+def test_metrics_driven_client_behavior_uses_arrivals_data(tmp_path):
+    import json
+
+    from lb_sim.client_behavior import create_client_behavior
+
+    metrics_path = tmp_path / "arrivals.json"
+    metrics_path.write_text(
+        json.dumps(
+            [
+                {"tick": 0, "arrivals": 3},
+                {"tick": 1, "arrivals": 7},
+                {"tick": 2, "arrivals": 2},
+            ]
+        )
+    )
+
+    behavior = create_client_behavior("metrics", source=str(metrics_path))
+
+    assert behavior.generate_count(0, __import__("random").Random(1)) == 3
+    assert behavior.generate_count(1, __import__("random").Random(1)) == 7
+    assert behavior.generate_count(999, __import__("random").Random(1)) == 0
