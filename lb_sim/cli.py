@@ -23,6 +23,7 @@ def cli() -> None:
 @click.option("--failure-rate", default=0.0, type=float, help="per-instance probability of failure before each tick.")
 @click.option("--unhealthy-instances", default="", help="Comma-separated machine names to mark unhealthy from the start, e.g. machine-1,machine-2.")
 @click.option("--metrics-source", default=None, type=click.Path(exists=False, dir_okay=False, path_type=Path), help="Path to metrics JSON/CSV replay file to simulate or replay an incident from captured data.")
+@click.option("--metrics-format", default=None, type=str, help="Explicit metrics format name, e.g. json, csv, tsv, text, or a custom registered loader name.")
 @click.option("--output-dir", default="output", show_default=True, type=click.Path(file_okay=False, path_type=Path), help="Directory to store simulation output.")
 @click.option("--client-workload-mean", default=1.0, type=float, help="Mean client workload.")
 @click.option("--client-workload-stddev", default=0.5, type=float, help="Standard deviation of client workload.")
@@ -36,6 +37,7 @@ def run(
     failure_rate: float,
     unhealthy_instances: str,
     metrics_source: Path | None,
+    metrics_format: str | None,
     output_dir: Path,
     client_workload_mean: float,
     client_workload_stddev: float,
@@ -50,6 +52,7 @@ def run(
         failure_rate=failure_rate,
         unhealthy_instances=unhealthy_instances,
         metrics_source=str(metrics_source) if metrics_source else None,
+        metrics_format=metrics_format.lower() if metrics_format else None,
         output_dir=str(output_dir),
         client_workload_mean=client_workload_mean,
         client_workload_stddev=client_workload_stddev,
@@ -69,15 +72,17 @@ def list_policies() -> None:
 
 @cli.command()
 @click.option("--metrics-source", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True, help="Metrics file to validate and replay.")
+@click.option("--metrics-format", default=None, type=str, help="Explicit metrics format name, e.g. json, csv, tsv, text, or a custom registered loader name.")
 @click.option("--policy", default="round_robin", show_default=True, help="Load balancing policy to use while replaying captured metrics.")
 @click.option("--output-dir", default="output", show_default=True, type=click.Path(file_okay=False, path_type=Path), help="Directory to store replay output.")
-def replay(metrics_source: Path, policy: str, output_dir: Path) -> None:
+def replay(metrics_source: Path, metrics_format: str | None, policy: str, output_dir: Path) -> None:
     """Validate and replay captured metrics as a timeline using the selected policy."""
     config = SimulationConfig(
         machines=1,
         ticks=1,
         policy_name=policy,
         metrics_source=str(metrics_source),
+        metrics_format=metrics_format.lower() if metrics_format else None,
         output_dir=str(output_dir),
     )
     result = Simulator(config).run()

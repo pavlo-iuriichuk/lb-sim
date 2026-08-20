@@ -171,3 +171,26 @@ def test_policy_comparison_returns_summary_for_multiple_policies():
     for values in summary.values():
         assert "selection_count" in values
         assert "fairness" in values
+
+
+def test_register_metrics_format_supports_custom_loader():
+    from lb_sim.metrics import METRICS_FORMATS, register_metrics_format
+
+    def custom_loader(source):
+        return [{"tick": 0, "instances": [{"name": "a"}]}]
+
+    register_metrics_format("custom", custom_loader)
+
+    assert "custom" in METRICS_FORMATS
+    assert METRICS_FORMATS["custom"] is custom_loader
+
+
+def test_load_metrics_source_accepts_explicit_format_name(tmp_path):
+    from lb_sim.metrics import load_metrics_source
+
+    metrics_path = tmp_path / "metrics.txt"
+    metrics_path.write_text("tick|instances\n0|[]\n")
+
+    result = load_metrics_source(metrics_path, format_name="text")
+
+    assert result[0]["tick"] == "0"

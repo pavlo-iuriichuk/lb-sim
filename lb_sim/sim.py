@@ -46,6 +46,7 @@ class SimulationConfig:
     failure_rate: float = 0.0
     unhealthy_instances: str = ""
     metrics_source: str | None = None
+    metrics_format: str | None = None
     seed: int = 0
     output_dir: str = "output"
 
@@ -105,7 +106,11 @@ class Simulator:
         self.rng = random.Random(config.seed)
         self.behavior = self._create_behavior(config.client_behavior or config.client_behaviour or "constant")
         self.policy = self._create_policy(config.policy_name)
-        self.metrics = validate_metrics_source(load_metrics_source(config.metrics_source)) if config.metrics_source else []
+        self.metrics = (
+            validate_metrics_source(load_metrics_source(config.metrics_source, format_name=config.metrics_format))
+            if config.metrics_source
+            else []
+        )
 
     def _create_policy(self, policy_name: str) -> Policy:
         name = policy_name.strip()
