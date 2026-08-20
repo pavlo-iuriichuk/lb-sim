@@ -19,6 +19,8 @@ def cli() -> None:
 @click.option("--clients-per-tick", default=3, type=int, help="Client arrivals per tick.")
 @click.option("--policy", default="round_robin", show_default=True, type=click.Choice(sorted(POLICY_MAP.keys())), help="Load balancing policy.")
 @click.option("--seed", default=0, type=int, help="Random seed for deterministic simulation.")
+@click.option("--failure-rate", default=0.0, type=float, help="per-instance probability of failure before each tick.")
+@click.option("--unhealthy-instances", default="", help="Comma-separated machine names to mark unhealthy from the start, e.g. machine-1,machine-2.")
 @click.option("--output-dir", default="output", show_default=True, type=click.Path(file_okay=False, path_type=Path), help="Directory to store simulation output.")
 @click.option("--client-workload-mean", default=1.0, type=float, help="Mean client workload.")
 @click.option("--client-workload-stddev", default=0.5, type=float, help="Standard deviation of client workload.")
@@ -28,6 +30,8 @@ def run(
     clients_per_tick: int,
     policy: str,
     seed: int,
+    failure_rate: float,
+    unhealthy_instances: str,
     output_dir: Path,
     client_workload_mean: float,
     client_workload_stddev: float,
@@ -38,6 +42,8 @@ def run(
         clients_per_tick=clients_per_tick,
         policy_name=policy,
         seed=seed,
+        failure_rate=failure_rate,
+        unhealthy_instances=unhealthy_instances,
         output_dir=str(output_dir),
         client_workload_mean=client_workload_mean,
         client_workload_stddev=client_workload_stddev,

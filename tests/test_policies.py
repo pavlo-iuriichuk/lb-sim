@@ -42,3 +42,21 @@ def test_pick_two_random_then_least_loaded_uses_sampled_pair():
 
     selected = policy.select(instances, {})
     assert selected.name in {"a", "d"}
+
+
+def test_instance_failure_rate_can_mark_unhealthy():
+    instance = Instance(name="failing", capacity=10.0, failure_rate=1.0)
+
+    instance.update_health()
+
+    assert instance.is_healthy is False
+
+
+def test_policy_skips_unhealthy_instances():
+    healthy = Instance(name="healthy", capacity=10.0)
+    unhealthy = Instance(name="unhealthy", capacity=10.0, is_healthy=False)
+    policy = LeastConnectionsPolicy()
+
+    selected = policy.select([healthy, unhealthy], {})
+
+    assert selected == healthy

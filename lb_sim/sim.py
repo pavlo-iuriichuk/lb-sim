@@ -35,6 +35,8 @@ class SimulationConfig:
     policy_name: str = "round_robin"
     client_workload_mean: float = 1.0
     client_workload_stddev: float = 0.5
+    failure_rate: float = 0.0
+    unhealthy_instances: str = ""
     seed: int = 0
     output_dir: str = "output"
 
@@ -105,10 +107,21 @@ class Simulator:
         return policy_cls()
 
     def build_instances(self) -> List[Instance]:
-        return [
-            Instance(name=f"machine-{index}", capacity=10.0 + index, estimated_load=0.0)
-            for index in range(self.config.machines)
-        ]
+        unhealthy_names = {name.strip() for name in self.config.unhealthy_instances.split(",") if name.strip()}
+        instances: List[Instance] = []
+        for index in range(self.config.machines):
+            machine_name = f"machine-{index}"
+            failure_rate = self.config.failure_rate if index % 2 == 0 else self.config.failure_rate * 0.5
+            instance = Instance(
+                name=machine_name,
+                capacity=10.0 + index,
+                estimated_load=0.0,
+                failure_rate=failure_rate,
+            )
+            if machine_name in unhealthy_names or (index == 0 and self.config.failure_rate >= 1.0):
+                instance.is_healthy = False
+            instances.append(instance)
+        return instances
 
     def run(self) -> SimulationResult:
         lb = LoadBalancer(self.policy, self.build_instances())
