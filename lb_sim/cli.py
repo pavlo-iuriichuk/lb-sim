@@ -67,5 +67,38 @@ def list_policies() -> None:
     click.echo("\n".join(policies))
 
 
+@cli.command()
+@click.option("--metrics-source", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True, help="Metrics file to validate and replay.")
+@click.option("--policy", default="round_robin", show_default=True, help="Load balancing policy to use while replaying captured metrics.")
+@click.option("--output-dir", default="output", show_default=True, type=click.Path(file_okay=False, path_type=Path), help="Directory to store replay output.")
+def replay(metrics_source: Path, policy: str, output_dir: Path) -> None:
+    """Validate and replay captured metrics as a timeline using the selected policy."""
+    config = SimulationConfig(
+        machines=1,
+        ticks=1,
+        policy_name=policy,
+        metrics_source=str(metrics_source),
+        output_dir=str(output_dir),
+    )
+    result = Simulator(config).run()
+    click.echo(json.dumps(result.summary, indent=2))
+    click.echo(f"Replay outputs written to: {output_dir}")
+
+
+@cli.command()
+@click.option("--policy", "policies", multiple=True, default=("round_robin", "least_connections"), show_default=True, help="Policies to compare.")
+@click.option("--machines", default=3, type=int, help="Number of backend instances.")
+@click.option("--ticks", default=10, type=int, help="Simulation duration in ticks.")
+@click.option("--clients-per-tick", default=3, type=int, help="Client arrivals per tick.")
+@click.option("--seed", default=0, type=int, help="Random seed for deterministic simulation.")
+def compare(policies: tuple[str, ...], machines: int, ticks: int, clients_per_tick: int, seed: int) -> None:
+    """Compare multiple policies under the same scenario."""
+    from .sim import compare_policies
+
+    config = SimulationConfig(machines=machines, ticks=ticks, clients_per_tick=clients_per_tick, seed=seed)
+    summary = compare_policies(policies, config=config)
+    click.echo(json.dumps(summary, indent=2))
+
+
 if __name__ == "__main__":
     cli()

@@ -1,11 +1,11 @@
 {
   "machines": 2,
-  "mean_estimated_load": 7.934407590463808,
-  "mean_connections": 3.5,
-  "max_estimated_load": 9.644092376577731,
-  "selection_count": 2,
+  "mean_estimated_load": 0.5236770095718261,
+  "mean_connections": 0.5,
+  "max_estimated_load": 1.0473540191436521,
+  "selection_count": 1,
   "fairness": {
-    "load_spread": 3.419369572227846,
-    "connection_spread": 3
+    "load_spread": 1.0473540191436521,
+    "connection_spread": 1
   }
 }

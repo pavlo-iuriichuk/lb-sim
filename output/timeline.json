@@ -1,36 +1,35 @@
 [
   {
     "tick": 0,
-    "arrivals": 2,
+    "arrivals": 1,
     "instances": [
       {
         "name": "machine-0",
         "capacity": 10.0,
-        "current_connections": 5,
-        "estimated_load": 9.644092376577731,
-        "cpu_usage": 1.0,
+        "current_connections": 1,
+        "estimated_load": 1.0473540191436521,
+        "cpu_usage": 0.20473540191436523,
         "memory_usage": 0.0,
         "latency_ms": 0.0,
         "is_healthy": true,
         "failure_rate": 0.0,
-        "utilization": 0.9644092376577731
+        "utilization": 0.10473540191436521
       },
       {
         "name": "machine-1",
         "capacity": 11.0,
-        "current_connections": 2,
-        "estimated_load": 6.224722804349885,
-        "cpu_usage": 0.7477020731227169,
+        "current_connections": 0,
+        "estimated_load": 0.0,
+        "cpu_usage": 0.0,
         "memory_usage": 0.0,
         "latency_ms": 0.0,
         "is_healthy": true,
         "failure_rate": 0.0,
-        "utilization": 0.565883891304535
+        "utilization": 0.0
       }
     ],
     "selection_history": [
-      "machine-0",
-      "machine-1"
+      "machine-0"
     ]
   }
 ]

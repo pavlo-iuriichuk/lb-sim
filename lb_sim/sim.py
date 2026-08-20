@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from .client_behavior import ClientBehavior, create_client_behavior
 from .domain import Client, Instance, LoadBalancer
 from .experimental import LeastLatencyPolicy
-from .metrics import load_metrics_source
+from .metrics import load_metrics_source, validate_metrics_source
 from .policies import (
     LeastConnectionsPolicy,
     PickTwoRandomThenLeastLoadedPolicy,
@@ -105,7 +105,7 @@ class Simulator:
         self.rng = random.Random(config.seed)
         self.behavior = self._create_behavior(config.client_behavior or config.client_behaviour or "constant")
         self.policy = self._create_policy(config.policy_name)
-        self.metrics = load_metrics_source(config.metrics_source) if config.metrics_source else []
+        self.metrics = validate_metrics_source(load_metrics_source(config.metrics_source)) if config.metrics_source else []
 
     def _create_policy(self, policy_name: str) -> Policy:
         name = policy_name.strip()
@@ -262,3 +262,26 @@ class Simulator:
                 "connection_spread": max(connections) - min(connections) if connections else 0.0,
             },
         }
+
+
+def compare_policies(policy_names: Iterable[str], config: SimulationConfig | None = None) -> dict[str, dict[str, Any]]:
+    base_config = config or SimulationConfig()
+    summaries: dict[str, dict[str, Any]] = {}
+    for policy_name in policy_names:
+        cfg = SimulationConfig(
+            machines=base_config.machines,
+            ticks=base_config.ticks,
+            clients_per_tick=base_config.clients_per_tick,
+            policy_name=policy_name,
+            client_behavior=base_config.client_behavior,
+            client_behaviour=base_config.client_behaviour,
+            client_workload_mean=base_config.client_workload_mean,
+            client_workload_stddev=base_config.client_workload_stddev,
+            failure_rate=base_config.failure_rate,
+            unhealthy_instances=base_config.unhealthy_instances,
+            seed=base_config.seed,
+            output_dir=base_config.output_dir,
+            metrics_source=base_config.metrics_source,
+        )
+        summaries[policy_name] = Simulator(cfg).run().summary
+    return summaries

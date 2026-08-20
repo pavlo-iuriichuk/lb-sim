@@ -1,3 +1,5 @@
+import pytest
+
 from lb_sim.domain import Instance
 from lb_sim.policies import (
     LeastConnectionsPolicy,
@@ -150,3 +152,22 @@ def test_simulator_can_replay_metrics_file(tmp_path):
 
     assert result.summary["machines"] == 2
     assert len(result.snapshots) == 1
+
+
+def test_validate_metrics_source_rejects_invalid_record():
+    from lb_sim.metrics import validate_metrics_source
+
+    with pytest.raises(ValueError):
+        validate_metrics_source([{"tick": 0, "arrivals": 1}])
+
+
+def test_policy_comparison_returns_summary_for_multiple_policies():
+    from lb_sim.sim import SimulationConfig, compare_policies
+
+    config = SimulationConfig(machines=2, ticks=1, clients_per_tick=1, seed=3)
+    summary = compare_policies(["round_robin", "least_connections"], config=config)
+
+    assert set(summary) == {"round_robin", "least_connections"}
+    for values in summary.values():
+        assert "selection_count" in values
+        assert "fairness" in values
